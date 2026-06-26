@@ -13,6 +13,7 @@ checks in `scripts/` or `test/`.
 - [docs/kentik-api.md](docs/kentik-api.md): Kentik auth, query path, and live-smoke notes.
 - [docs/forward-ingest-contract.md](docs/forward-ingest-contract.md): generated package shape.
 - [docs/field-integration-guidelines.md](docs/field-integration-guidelines.md): public branding and support boundary.
+- [docs/operator-runbook.md](docs/operator-runbook.md): field workflow from export to post-apply reconcile.
 - [docs/demo-data.md](docs/demo-data.md): offline fixture strategy.
 - [docs/validation-matrix.md](docs/validation-matrix.md): what is verified now.
 - [docs/harness-engineering.md](docs/harness-engineering.md): harness model for this repo.

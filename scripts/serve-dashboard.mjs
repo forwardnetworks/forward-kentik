@@ -4,7 +4,7 @@ import { spawn } from "node:child_process";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { buildDashboardFile } from "./build-dashboard.mjs";
 import { parseArgs } from "../src/io.mjs";
 
@@ -29,6 +29,8 @@ const MIME = {
   ".js": "text/javascript; charset=utf-8",
 };
 
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
 const main = async () => {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
@@ -39,18 +41,25 @@ const main = async () => {
   const dist = args.dist || "dist";
   const port = Number.parseInt(args.port || "4173", 10);
   await buildDashboardFile({ dist });
+  const server = createDashboardServer({ dist });
 
-  const server = createServer(async (request, response) => {
+  server.listen(port, "127.0.0.1", () => {
+    process.stdout.write(`Forward Kentik dashboard: http://127.0.0.1:${port}/dashboard/\n`);
+  });
+};
+
+export const createDashboardServer = ({ dist, importer = runImporter }) =>
+  createServer(async (request, response) => {
     const url = new URL(request.url || "/", `http://${request.headers.host || "127.0.0.1"}`);
     try {
       if (request.method === "POST" && url.pathname === "/api/forward-import") {
         const body = await readJsonBody(request);
-        const report = await runImporter({ dist, apply: Boolean(body.apply) });
+        const report = await importer({ dist, apply: Boolean(body.apply) });
         json(response, 200, report);
         return;
       }
 
-      if (request.method !== "GET") {
+      if (request.method !== "GET" && request.method !== "HEAD") {
         json(response, 405, { error: "method not allowed" });
         return;
       }
@@ -58,18 +67,17 @@ const main = async () => {
       const filePath = resolveStaticPath(dist, url.pathname);
       const content = await readFile(filePath);
       response.writeHead(200, { "Content-Type": MIME[path.extname(filePath)] || "application/octet-stream" });
-      response.end(content);
+      response.end(request.method === "HEAD" ? undefined : content);
     } catch (error) {
+      if (error.code === "ENOENT") {
+        json(response, 404, { error: "not found" });
+        return;
+      }
       json(response, 500, { error: error.message });
     }
   });
 
-  server.listen(port, "127.0.0.1", () => {
-    process.stdout.write(`Forward Kentik dashboard: http://127.0.0.1:${port}/dashboard/\n`);
-  });
-};
-
-const resolveStaticPath = (dist, urlPath) => {
+export const resolveStaticPath = (dist, urlPath) => {
   const cleanPath = decodeURIComponent(urlPath.replace(/^\/+/, ""));
   const relativePath = cleanPath === "" ? "dashboard/index.html" : cleanPath.endsWith("/") ? `${cleanPath}index.html` : cleanPath;
   const resolved = path.resolve(dist, relativePath);
@@ -80,7 +88,7 @@ const resolveStaticPath = (dist, urlPath) => {
   return resolved;
 };
 
-const runImporter = ({ dist, apply }) =>
+export const runImporter = ({ dist, apply, env = process.env }) =>
   new Promise((resolve, reject) => {
     const reportPath = path.join(dist, apply ? "forward-import-apply-report.json" : "forward-import-dry-run-report.json");
     const args = [
@@ -96,8 +104,8 @@ const runImporter = ({ dist, apply }) =>
       args.push("--apply");
     }
     const child = spawn(process.execPath, args, {
-      cwd: path.resolve(path.dirname(new URL(import.meta.url).pathname), ".."),
-      env: process.env,
+      cwd: root,
+      env,
       stdio: ["ignore", "pipe", "pipe"],
     });
     let stdout = "";

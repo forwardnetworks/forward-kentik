@@ -173,6 +173,9 @@ credentials, or live flow exports. The default gates are:
 See [docs/field-integration-guidelines.md](docs/field-integration-guidelines.md)
 for branding and support boundaries.
 
+See [docs/operator-runbook.md](docs/operator-runbook.md) for the field workflow
+from export through post-apply reconciliation.
+
 Live Kentik smoke requires both the local token and Kentik email:
 
 ```bash
