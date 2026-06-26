@@ -1,0 +1,31 @@
+{
+  "version": "forward-kentik-location-map/v0.1",
+  "src": {
+    "branch-a": {
+      "type": "DeviceFilter",
+      "value": "branch-router"
+    },
+    "branch-b": {
+      "type": "DeviceFilter",
+      "value": "branch-router-2"
+    },
+    "dc-east": {
+      "type": "DeviceFilter",
+      "value": "dc-core"
+    }
+  },
+  "dst": {
+    "dc-east": {
+      "type": "DeviceFilter",
+      "value": "dc-core"
+    },
+    "shared-services": {
+      "type": "DeviceFilter",
+      "value": "shared-services"
+    },
+    "internet": {
+      "type": "DeviceFilter",
+      "value": "internet-edge"
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "results": [
+    {
+      "bucket": "Forward Intent Candidates",
+      "data": [
+        {
+          "src_addr": "10.20.10.15",
+          "dst_addr": "172.16.40.20",
+          "protocol": "6",
+          "i_dst_port": 443,
+          "application": "checkout",
+          "src_site": "branch-a",
+          "dst_site": "dc-east",
+          "device_name": "edge-a",
+          "sum_bytes": 184467440,
+          "sum_packets": 220337,
+          "sum_flows": 814,
+          "max_bits_per_sec": 3510000,
+          "first_seen": "2026-06-26T13:00:00Z",
+          "last_seen": "2026-06-26T14:00:00Z"
+        },
+        {
+          "src_addr": "10.30.8.22",
+          "dst_addr": "192.0.2.53",
+          "protocol": "17",
+          "i_dst_port": 53,
+          "application": "dns",
+          "src_site": "branch-b",
+          "dst_site": "shared-services",
+          "device_name": "edge-b",
+          "sum_bytes": 9321451,
+          "sum_packets": 44320,
+          "sum_flows": 2980,
+          "max_bits_per_sec": 94000,
+          "first_seen": "2026-06-26T13:00:00Z",
+          "last_seen": "2026-06-26T14:00:00Z"
+        },
+        {
+          "src_addr": "10.42.5.19",
+          "dst_addr": "203.0.113.10",
+          "protocol": "6",
+          "i_dst_port": 8443,
+          "application": "vendor-api",
+          "src_site": "dc-east",
+          "dst_site": "internet",
+          "device_name": "internet-edge",
+          "sum_bytes": 59192313,
+          "sum_packets": 60112,
+          "sum_flows": 421,
+          "max_bits_per_sec": 612000,
+          "first_seen": "2026-06-26T13:00:00Z",
+          "last_seen": "2026-06-26T14:00:00Z"
+        },
+        {
+          "src_addr": "10.99.1.8",
+          "dst_addr": "198.51.100.25",
+          "protocol": "6",
+          "application": "unknown-web",
+          "src_site": "lab",
+          "dst_site": "internet",
+          "sum_bytes": 999999,
+          "sum_packets": 1400,
+          "sum_flows": 12,
+          "max_bits_per_sec": 18000,
+          "first_seen": "2026-06-26T13:00:00Z",
+          "last_seen": "2026-06-26T14:00:00Z"
+        }
+      ]
+    }
+  ]
+}

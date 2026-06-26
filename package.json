@@ -1,0 +1,33 @@
+{
+  "name": "forward-kentik",
+  "version": "0.1.0",
+  "description": "Forward field integration for turning Kentik flow evidence into Forward intent-check packages",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/forwardnetworks/forward-kentik.git"
+  },
+  "bugs": {
+    "url": "https://github.com/forwardnetworks/forward-kentik/issues"
+  },
+  "homepage": "https://github.com/forwardnetworks/forward-kentik#readme",
+  "scripts": {
+    "kentik:export": "node scripts/kentik-export.mjs",
+    "kentik:live:smoke": "node scripts/kentik-live-smoke.mjs",
+    "kentik:seed:demo": "node scripts/seed-kentik-demo-data.mjs",
+    "forward:import": "node scripts/forward-import-package.mjs",
+    "forward:import:smoke": "node scripts/forward-import-smoke.mjs",
+    "forward:data-connector": "node scripts/forward-data-connector-config.mjs",
+    "package:serve": "node scripts/serve-package.mjs",
+    "screenshots:render": "node scripts/render-demo-screenshots.mjs",
+    "repo:validate": "node scripts/validate-repo.mjs",
+    "workflow:smoke": "node scripts/workflow-smoke.mjs",
+    "test": "node --test test/*.test.mjs",
+    "ci": "npm run repo:validate && npm run kentik:export && npm run screenshots:render && npm test && npm run workflow:smoke && npm run forward:import:smoke"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "author": "Forward Networks",
+  "license": "MIT"
+}

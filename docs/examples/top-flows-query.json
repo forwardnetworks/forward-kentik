@@ -1,0 +1,54 @@
+{
+  "queries": [
+    {
+      "query": {
+        "viz_type": "table",
+        "metric": "bytes",
+        "matrixBy": [],
+        "cidr": 32,
+        "cidr6": 128,
+        "pps_threshold": 1,
+        "topx": 25,
+        "depth": 100,
+        "fastData": "Auto",
+        "outsort": "max_bits_per_sec",
+        "lookback_seconds": 3600,
+        "hostname_lookup": "false",
+        "starting_time": null,
+        "ending_time": null,
+        "all_selected": false,
+        "filters_obj": {
+          "connector": "All",
+          "filterGroups": []
+        },
+        "saved_filters": [],
+        "descriptor": "Top observed application flows",
+        "query_title": "Top src dst protocol port flows",
+        "aggregates": [
+          {
+            "name": "max_bits_per_sec",
+            "column": "f_sum_both_bytes",
+            "fn": "max",
+            "raw": true,
+            "sample_rate": 1
+          },
+          {
+            "name": "avg_bits_per_sec",
+            "column": "f_sum_both_bytes",
+            "fn": "average",
+            "sample_rate": 1
+          }
+        ],
+        "dimension": [
+          "IP_src",
+          "IP_dst",
+          "Proto",
+          "Port_dst"
+        ]
+      },
+      "bucket": "Forward Intent Candidates",
+      "bucketIndex": 0,
+      "isOverlay": false
+    }
+  ]
+}
