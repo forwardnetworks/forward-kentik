@@ -8,6 +8,7 @@
 | Portal catalog sanitization and seeded fixture generation | Automated | `npm test` |
 | Normalized flow validation | Automated | `npm test` |
 | Forward check generation | Automated | `npm test` |
+| Exposure-style dashboard generation | Automated | `npm run dashboard:build`, `npm test` |
 | Forward package validation and reconciliation | Automated | `npm test`, `npm run forward:import:smoke` |
 | Forward host preflight before apply | Automated against fake API; manual against tenant | `npm run forward:import:smoke`, `npm run forward:import -- --apply` |
 | End-to-end fixture export | Automated | `npm run workflow:smoke` |

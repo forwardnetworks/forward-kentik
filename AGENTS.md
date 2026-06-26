@@ -23,6 +23,7 @@ checks in `scripts/` or `test/`.
 - Kentik data is evidence, not source of truth. Forward verifies the modeled network.
 - The primary workflow is offline: export candidate checks, review, then import create-missing-only.
 - MVP has no scheduling; push requires explicit operator action.
+- Dashboard should mirror Forward Exposure Analysis: vendor evidence, Forward correlation, intent-check output.
 - Data Connector artifacts are optional NQE visibility aids; they do not create intent checks.
 - Keep the normalized flow schema provider-neutral so NetFlow/IPFIX/sFlow collectors can plug in later.
 - Prefer replayable fixtures and smoke harnesses before live API work.

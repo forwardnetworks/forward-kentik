@@ -18,12 +18,14 @@
     "forward:import": "node scripts/forward-import-package.mjs",
     "forward:import:smoke": "node scripts/forward-import-smoke.mjs",
     "forward:data-connector": "node scripts/forward-data-connector-config.mjs",
+    "dashboard:build": "node scripts/build-dashboard.mjs",
+    "dashboard:serve": "node scripts/serve-dashboard.mjs",
     "package:serve": "node scripts/serve-package.mjs",
     "screenshots:render": "node scripts/render-demo-screenshots.mjs",
     "repo:validate": "node scripts/validate-repo.mjs",
     "workflow:smoke": "node scripts/workflow-smoke.mjs",
     "test": "node --test test/*.test.mjs",
-    "ci": "npm run repo:validate && npm run kentik:export && npm run screenshots:render && npm test && npm run workflow:smoke && npm run forward:import:smoke"
+    "ci": "npm run repo:validate && npm run kentik:export && npm run dashboard:build && npm run screenshots:render && npm test && npm run workflow:smoke && npm run forward:import:smoke"
   },
   "engines": {
     "node": ">=24.0.0"

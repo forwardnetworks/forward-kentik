@@ -9,6 +9,11 @@
 5. An operator reviews the package, imports selected checks, and lets Forward
    verify the modeled network.
 
+The dashboard mirrors Forward Exposure Analysis: Kentik evidence appears on the
+left, Forward modeled correlation in the middle, and candidate intent checks on
+the right. The operator can export the package, dry-run reconciliation, or push
+missing checks.
+
 The importable boundary is endpoint resolution. A Kentik row with source and
 destination IPs is a candidate; it becomes a Forward intent check only when
 those endpoints map to Forward hosts or reviewed aliases in the target network.
@@ -25,10 +30,14 @@ are generated from local artifacts with:
 
 ```bash
 npm run kentik:export
+npm run dashboard:build
 npm run screenshots:render
 ```
 
 These images are public-doc assets, not captured Forward product screenshots.
+
+`05-dashboard-correlation.png` is a browser screenshot of the generated
+dashboard with mapped demo evidence.
 
 ## Why Kentik First
 

@@ -28,6 +28,7 @@ workflow is explicit review, export, dry-run, then push.
 - Kentik live API smoke: `scripts/kentik-live-smoke.mjs`
 - Kentik portal demo seed: `scripts/seed-kentik-demo-data.mjs`
 - Offline export workflow: `scripts/kentik-export.mjs`
+- Exposure-style dashboard: `scripts/build-dashboard.mjs`, `scripts/serve-dashboard.mjs`
 - Forward create-missing-only importer: `scripts/forward-import-package.mjs`
 - Normalized flow model: `src/normalize.mjs`
 - Forward package generation: `src/forward-package.mjs`
@@ -66,6 +67,10 @@ Package readiness:
 Forward import dry run:
 
 ![Forward import dry run](docs/assets/screenshots/03-forward-import-dry-run.png)
+
+Exposure-style dashboard:
+
+![Kentik and Forward correlation dashboard](docs/assets/screenshots/05-dashboard-correlation.png)
 
 ## Forward Import
 
@@ -112,6 +117,8 @@ checks, so they are not the main workflow.
 
 ```bash
 npm run kentik:export
+npm run dashboard:build
+npm run dashboard:serve
 npm run kentik:seed:demo
 npm run forward:import -- --validate-only --checks dist/forward-intent-checks.json --manifest dist/forward-kentik-manifest.json
 npm run screenshots:render
