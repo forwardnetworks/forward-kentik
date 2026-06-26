@@ -56,6 +56,11 @@ Kentik is attractive for the first vendor adapter because it has:
 - Data Explorer "Show API Call" output that can seed repeatable queries.
 - Customer relevance for at least one active Forward field motion.
 
+ktranslate and Kentik Firehose are complementary, not the primary MVP path.
+They help collect/export enriched network telemetry, but the Query API is the
+better control point for a reviewable presales workflow that generates Forward
+intent-check candidates.
+
 ## Later Adapter Targets
 
 The normalized flow model should also support:
