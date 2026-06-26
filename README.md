@@ -1,5 +1,7 @@
 # Forward Kentik
 
+[![ci](https://github.com/forwardnetworks/forward-kentik/actions/workflows/ci.yml/badge.svg)](https://github.com/forwardnetworks/forward-kentik/actions/workflows/ci.yml)
+
 Forward field integration for turning Kentik flow evidence into Forward
 intent-check import packages.
 

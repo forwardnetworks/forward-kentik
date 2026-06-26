@@ -21,6 +21,7 @@ const requiredFiles = [
   "docs/forward-ingest-contract.md",
   "docs/demo-data.md",
   "docs/validation-matrix.md",
+  "docs/release-notes.md",
   "docs/examples/top-flows-query.json",
   "docs/examples/location-map.demo.json",
   "fixtures/kentik-topxdata.demo.json",
@@ -135,6 +136,7 @@ if (await exists("AGENTS.md")) {
     "docs/forward-ingest-contract.md",
     "docs/field-integration-guidelines.md",
     "docs/validation-matrix.md",
+    "docs/release-notes.md",
     "docs/harness-engineering.md",
   ]) {
     if (!agentMap.includes(target)) {

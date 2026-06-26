@@ -16,6 +16,7 @@ checks in `scripts/` or `test/`.
 - [docs/operator-runbook.md](docs/operator-runbook.md): field workflow from export to post-apply reconcile.
 - [docs/demo-data.md](docs/demo-data.md): offline fixture strategy.
 - [docs/validation-matrix.md](docs/validation-matrix.md): what is verified now.
+- [docs/release-notes.md](docs/release-notes.md): public MVP release notes.
 - [docs/harness-engineering.md](docs/harness-engineering.md): harness model for this repo.
 
 ## Non-Negotiables
