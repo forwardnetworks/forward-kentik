@@ -10,6 +10,7 @@ const failures = [];
 const requiredFiles = [
   "AGENTS.md",
   "README.md",
+  "CONTRIBUTING.md",
   "LICENSE",
   "SECURITY.md",
   "docs/harness-engineering.md",
@@ -55,6 +56,10 @@ const requiredFiles = [
   "test/forward-import.test.mjs",
   "test/forward-location-template.test.mjs",
   ".github/workflows/ci.yml",
+  ".github/pull_request_template.md",
+  ".github/ISSUE_TEMPLATE/config.yml",
+  ".github/ISSUE_TEMPLATE/bug_report.yml",
+  ".github/ISSUE_TEMPLATE/feature_request.yml",
 ];
 
 const requiredScreenshots = [

@@ -1,0 +1,45 @@
+name: Feature request
+description: Suggest a field integration enhancement.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include credentials, customer data, or live flow exports.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Field problem
+      description: What presales, onboarding, or customer workflow problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: What should change?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Kentik Query API
+        - Normalization
+        - Forward location mapping
+        - Intent check generation
+        - Forward import/reconciliation
+        - Dashboard
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: This keeps the project positioned as a Forward field integration, not a product integration.
+          required: true

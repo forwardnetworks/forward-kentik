@@ -1,0 +1,57 @@
+name: Bug report
+description: Report a reproducible problem in the field integration.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include Kentik tokens, Forward credentials, customer flow exports, or tenant-specific reports.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What failed?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction
+      description: Commands or sanitized fixture steps that reproduce the problem.
+      placeholder: |
+        npm run kentik:export -- --input fixtures/kentik-topxdata.demo.json
+        npm run dashboard:build
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Node version, OS, and sanitized Forward/Kentik context.
+      placeholder: |
+        Node:
+        OS:
+        Kentik source: fixture / Query API / seeded demo
+        Forward target: sanitized network description
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Data safety
+      options:
+        - label: I removed credentials, tokens, customer data, and live exports.
+          required: true
