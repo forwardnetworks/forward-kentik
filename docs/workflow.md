@@ -14,6 +14,11 @@ left, Forward modeled correlation in the middle, and candidate intent checks on
 the right. The operator can export the package, dry-run reconciliation, or push
 missing checks.
 
+For customer demos, generate a location-map template from the target Forward
+network device inventory, review it, then rebuild the package with
+`--location-map`. This keeps raw telemetry IPs from becoming unchecked Forward
+intent locations.
+
 The importable boundary is endpoint resolution. A Kentik row with source and
 destination IPs is a candidate; it becomes a Forward intent check only when
 those endpoints map to Forward hosts or reviewed aliases in the target network.
@@ -38,6 +43,9 @@ These images are public-doc assets, not captured Forward product screenshots.
 
 `05-dashboard-correlation.png` is a browser screenshot of the generated
 dashboard with mapped demo evidence.
+
+`06-dashboard-reconciled.png` shows the same dashboard after a Forward
+reconciliation report has been loaded.
 
 ## Why Kentik First
 

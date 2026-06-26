@@ -18,6 +18,7 @@
     "forward:import": "node scripts/forward-import-package.mjs",
     "forward:import:smoke": "node scripts/forward-import-smoke.mjs",
     "forward:data-connector": "node scripts/forward-data-connector-config.mjs",
+    "forward:location-map": "node scripts/forward-location-map-template.mjs",
     "dashboard:build": "node scripts/build-dashboard.mjs",
     "dashboard:serve": "node scripts/serve-dashboard.mjs",
     "package:serve": "node scripts/serve-package.mjs",

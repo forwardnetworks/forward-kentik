@@ -31,11 +31,13 @@ const requiredFiles = [
   "src/dashboard.mjs",
   "src/normalize.mjs",
   "src/forward-package.mjs",
+  "src/forward-location-template.mjs",
   "scripts/kentik-export.mjs",
   "scripts/kentik-live-smoke.mjs",
   "scripts/seed-kentik-demo-data.mjs",
   "scripts/forward-import-package.mjs",
   "scripts/forward-import-smoke.mjs",
+  "scripts/forward-location-map-template.mjs",
   "scripts/forward-data-connector-config.mjs",
   "scripts/build-dashboard.mjs",
   "scripts/serve-dashboard.mjs",
@@ -49,6 +51,7 @@ const requiredFiles = [
   "test/demo-seed.test.mjs",
   "test/data-connector.test.mjs",
   "test/forward-import.test.mjs",
+  "test/forward-location-template.test.mjs",
   ".github/workflows/ci.yml",
 ];
 
@@ -58,6 +61,7 @@ const requiredScreenshots = [
   "docs/assets/screenshots/03-forward-import-dry-run.png",
   "docs/assets/screenshots/04-optional-nqe-visibility.png",
   "docs/assets/screenshots/05-dashboard-correlation.png",
+  "docs/assets/screenshots/06-dashboard-reconciled.png",
 ];
 
 const skippedDirectories = new Set([".git", "node_modules", "dist"]);

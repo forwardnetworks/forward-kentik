@@ -79,7 +79,7 @@ export const buildDashboardHtml = ({ flows, checks, manifest, report, importRepo
         </tbody>
       </table>
     </section>
-    <section class="output" id="output">No Forward action has run in this dashboard session.</section>
+    <section class="output" id="output">${escapeHtml(initialOutput(importReport))}</section>
   </main>
   <script>${clientScript()}</script>
 </body>
@@ -146,7 +146,37 @@ const locationLabel = (location) => {
     return "Unmapped";
   }
   const value = location.value || (Array.isArray(location.values) ? location.values.join(", ") : "");
-  return `${location.type}: ${value}`;
+  return `${location.type}: ${compactLocationValue(value)}`;
+};
+
+const compactLocationValue = (value) => {
+  const withoutUuid = String(value).replace(/^[0-9a-f]{8}-[0-9a-f-]{27}\./i, "");
+  if (withoutUuid.length <= 54) {
+    return withoutUuid;
+  }
+  const parts = withoutUuid.split(".");
+  const suffix = parts.slice(-3).join(".");
+  if (suffix.length <= 54) {
+    return suffix;
+  }
+  return `${withoutUuid.slice(0, 23)}...${withoutUuid.slice(-24)}`;
+};
+
+const initialOutput = (importReport) => {
+  if (!importReport) {
+    return "No Forward action has run in this dashboard session.";
+  }
+  return JSON.stringify(
+    {
+      loadedReport: importReport.mode,
+      networkId: importReport.networkId,
+      snapshotId: importReport.snapshotId,
+      plannedChecks: importReport.plannedChecks,
+      counts: importReport.counts,
+    },
+    null,
+    2,
+  );
 };
 
 const formatBytes = (bytes) => {

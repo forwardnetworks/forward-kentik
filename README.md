@@ -30,6 +30,7 @@ workflow is explicit review, export, dry-run, then push.
 - Offline export workflow: `scripts/kentik-export.mjs`
 - Exposure-style dashboard: `scripts/build-dashboard.mjs`, `scripts/serve-dashboard.mjs`
 - Forward create-missing-only importer: `scripts/forward-import-package.mjs`
+- Forward device map template: `scripts/forward-location-map-template.mjs`
 - Normalized flow model: `src/normalize.mjs`
 - Forward package generation: `src/forward-package.mjs`
 - Forward location mapping: `src/location-map.mjs`
@@ -72,6 +73,10 @@ Exposure-style dashboard:
 
 ![Kentik and Forward correlation dashboard](docs/assets/screenshots/05-dashboard-correlation.png)
 
+After Forward reconciliation:
+
+![Kentik and Forward reconciled dashboard](docs/assets/screenshots/06-dashboard-reconciled.png)
+
 ## Forward Import
 
 The primary integration path is offline:
@@ -109,6 +114,30 @@ npm run kentik:export -- \
   --location-map docs/examples/location-map.demo.json
 ```
 
+To build a customer-specific starting point from a target Forward network:
+
+```bash
+export FORWARD_BASE_URL=https://forward.example.com
+export FORWARD_USER=<user>
+export FORWARD_PASSWORD=<password-or-token>
+export FORWARD_NETWORK_ID=<network-id>
+
+npm run kentik:export
+npm run forward:location-map -- --flows dist/observed-flows.json --out dist/forward-location-map.template.json
+npm run kentik:export -- --location-map dist/forward-location-map.template.json
+npm run dashboard:build
+```
+
+The generated map is marked `reviewRequired: true`; it is a template, not a
+claim that every flow has the right business intent.
+
+The dashboard can load a reconciliation report:
+
+```bash
+npm run forward:import -- --checks dist/forward-intent-checks.json --manifest dist/forward-kentik-manifest.json --report dist/forward-import-dry-run-report.json
+npm run dashboard:build -- --import-report dist/forward-import-dry-run-report.json
+```
+
 Forward Data Connector config generation is optional and only useful when you
 want `observed-flows.json` visible to NQE. Data Connectors do not create intent
 checks, so they are not the main workflow.
@@ -117,6 +146,7 @@ checks, so they are not the main workflow.
 
 ```bash
 npm run kentik:export
+npm run forward:location-map
 npm run dashboard:build
 npm run dashboard:serve
 npm run kentik:seed:demo
