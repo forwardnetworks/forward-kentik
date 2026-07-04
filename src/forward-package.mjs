@@ -60,11 +60,11 @@ export const toForwardIntentCheck = (flow) => {
   ].filter(Boolean);
 
   const fromLocation = flow.forwardLocations?.from || {
-    type: "HostFilter",
+    type: "SubnetLocationFilter",
     value: flow.srcIp,
   };
   const toLocation = flow.forwardLocations?.to || {
-    type: "HostFilter",
+    type: "SubnetLocationFilter",
     value: flow.dstIp,
   };
 

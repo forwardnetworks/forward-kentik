@@ -49,6 +49,11 @@ test("validates location objects", () => {
     type: "HostFilter",
     value: "10.0.0.1",
   });
+  assert.deepEqual(normalizeLocation({ type: "SubnetLocationFilter", value: " 10.0.0.1/32 ", host: " app-1 " }), {
+    type: "SubnetLocationFilter",
+    value: "10.0.0.1/32",
+    host: "app-1",
+  });
   assert.throws(() => normalizeLocation({ type: "BadFilter", value: "x" }));
   assert.throws(() => normalizeLocation({ type: "HostFilter", value: "x", values: ["y"] }));
 });

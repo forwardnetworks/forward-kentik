@@ -427,6 +427,7 @@ export const locationSpecifiersForCheck = (check) => {
     HostFilter: [],
     DeviceFilter: [],
     InterfaceFilter: [],
+    SubnetLocationFilter: [],
   };
   for (const endpoint of [check.definition?.filters?.from, check.definition?.filters?.to]) {
     const location = endpoint?.location;
@@ -448,7 +449,7 @@ export const locationSpecifiersForCheck = (check) => {
 export const hostSpecifiersForCheck = (check) => locationSpecifiersForCheck(check).HostFilter;
 
 export const preflightLocations = async ({ api, networkId, checks }) => {
-  const specifiers = { HostFilter: [], DeviceFilter: [], InterfaceFilter: [] };
+  const specifiers = { HostFilter: [], DeviceFilter: [], InterfaceFilter: [], SubnetLocationFilter: [] };
   for (const check of checks) {
     const checkSpecifiers = locationSpecifiersForCheck(check);
     for (const type of Object.keys(specifiers)) {
@@ -462,6 +463,7 @@ export const preflightLocations = async ({ api, networkId, checks }) => {
   const missing = {
     HostFilter: [],
     DeviceFilter: [],
+    SubnetLocationFilter: [],
   };
 
   for (const specifier of specifiers.HostFilter) {
@@ -485,6 +487,7 @@ export const preflightLocations = async ({ api, networkId, checks }) => {
     checked: {
       HostFilter: specifiers.HostFilter.length,
       DeviceFilter: specifiers.DeviceFilter.length,
+      SubnetLocationFilter: specifiers.SubnetLocationFilter.length,
     },
     unchecked: {
       InterfaceFilter: specifiers.InterfaceFilter,
@@ -519,7 +522,9 @@ const requireString = (value) => typeof value === "string" && value.trim().lengt
 const elapsedMs = (startedAt) => Date.now() - startedAt.getTime();
 
 const missingLocationCount = (locationPreflight) =>
-  (locationPreflight?.missing?.HostFilter?.length || 0) + (locationPreflight?.missing?.DeviceFilter?.length || 0);
+  (locationPreflight?.missing?.HostFilter?.length || 0) +
+  (locationPreflight?.missing?.DeviceFilter?.length || 0) +
+  (locationPreflight?.missing?.SubnetLocationFilter?.length || 0);
 
 const escapeMetricLabel = (value) =>
   String(value ?? "")
@@ -587,8 +592,9 @@ export const buildStatusArtifact = (report) => {
       ? {
           checked: report.locationPreflight.checked,
           missing: {
-            HostFilter: report.locationPreflight.missing.HostFilter.length,
-            DeviceFilter: report.locationPreflight.missing.DeviceFilter.length,
+            HostFilter: report.locationPreflight.missing.HostFilter?.length || 0,
+            DeviceFilter: report.locationPreflight.missing.DeviceFilter?.length || 0,
+            SubnetLocationFilter: report.locationPreflight.missing.SubnetLocationFilter?.length || 0,
           },
           unchecked: {
             InterfaceFilter: report.locationPreflight.unchecked.InterfaceFilter.length,
@@ -973,6 +979,7 @@ const main = async () => {
     const missing = [
       ...locationPreflight.missing.HostFilter.map((specifier) => `HostFilter:${specifier}`),
       ...locationPreflight.missing.DeviceFilter.map((specifier) => `DeviceFilter:${specifier}`),
+      ...locationPreflight.missing.SubnetLocationFilter.map((specifier) => `SubnetLocationFilter:${specifier}`),
     ];
     if (apply && missing.length > 0) {
       const preview = missing.slice(0, 20).join(", ");

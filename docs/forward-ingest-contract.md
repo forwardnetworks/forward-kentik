@@ -29,9 +29,9 @@ The first command is a dry run. `--apply` creates missing checks only.
 
 During dry-run and before `--apply`, the importer checks every generated
 `HostFilter` and `DeviceFilter` against Forward lookup. Dry-run reports missing
-locations; apply fails before posting checks if missing locations remain. This
-keeps presales/demo imports from creating invalid intent checks from raw
-telemetry IPs.
+locations; apply fails before posting checks if missing locations remain.
+Unmapped raw Kentik packet IPs are emitted as `SubnetLocationFilter`, matching
+Forward path-search behavior for IP-bound source/destination locations.
 
 ## Check Shape
 
@@ -40,14 +40,14 @@ telemetry IPs.
 Current generated checks use:
 
 - `definition.checkType: "Existential"`
-- `definition.filters.from.location.type: "HostFilter"`
-- `definition.filters.to.location.type: "HostFilter"`
+- `definition.filters.from.location.type: "SubnetLocationFilter"` for unmapped raw IP evidence
+- `definition.filters.to.location.type: "SubnetLocationFilter"` for unmapped raw IP evidence
 - `definition.filters.from.headers` for `ip_proto` and `tp_dst`
 - `definition.filters.flowTypes: ["VALID"]`
 
-`HostFilter` values must be resolvable in the target Forward network at import
-time. If Kentik reports raw IPs that Forward has not learned as hosts, keep those
-rows as review candidates until a mapping exists.
+Reviewed location maps may override either endpoint to `HostFilter`,
+`DeviceFilter`, or `InterfaceFilter`. `HostFilter` values must be resolvable in
+the target Forward network at import time.
 
 ## Tags
 

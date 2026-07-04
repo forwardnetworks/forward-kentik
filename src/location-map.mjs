@@ -17,7 +17,12 @@ const ENDPOINT_CANDIDATES = {
   ],
 };
 
-export const ALLOWED_FORWARD_LOCATION_TYPES = new Set(["HostFilter", "DeviceFilter", "InterfaceFilter"]);
+export const ALLOWED_FORWARD_LOCATION_TYPES = new Set([
+  "HostFilter",
+  "DeviceFilter",
+  "InterfaceFilter",
+  "SubnetLocationFilter",
+]);
 
 export const applyLocationMap = (flows, locationMap) =>
   flows.map((flow) => resolveFlowLocations(flow, locationMap));
@@ -115,9 +120,14 @@ export const normalizeLocation = (location, label = "location") => {
     throw new Error(`${label}.values must contain non-empty strings.`);
   }
 
+  const optionalMetadata = Object.fromEntries(
+    ["host", "device"]
+      .filter((key) => typeof location[key] === "string" && location[key].trim())
+      .map((key) => [key, location[key].trim()]),
+  );
   return hasValue
-    ? { type: location.type, value: location.value.trim() }
-    : { type: location.type, values: [...new Set(location.values.map((value) => value.trim()))] };
+    ? { type: location.type, value: location.value.trim(), ...optionalMetadata }
+    : { type: location.type, values: [...new Set(location.values.map((value) => value.trim()))], ...optionalMetadata };
 };
 
 const validateDirectMap = (map, label) => {

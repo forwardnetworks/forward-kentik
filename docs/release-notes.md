@@ -1,5 +1,24 @@
 # Release Notes
 
+## v0.1.2
+
+Forward location semantics patch.
+
+### Changed
+
+- Unmapped raw Kentik packet IPs now generate `SubnetLocationFilter` locations,
+  matching Forward path-search source/destination IP behavior.
+- Reviewed location maps may still override endpoints to `HostFilter`,
+  `DeviceFilter`, or `InterfaceFilter`.
+- Importer dry-run/status artifacts now count `SubnetLocationFilter` locations
+  separately while preserving host/device preflight checks.
+
+### Validation
+
+- Full CI passed.
+- Kentik portal-seeded dummy data validated through export, schema validation,
+  Forward dry-run, reviewed location-map dry-run, and dashboard generation.
+
 ## v0.1.1
 
 Production hardening release for Forward Integration for Kentik.
