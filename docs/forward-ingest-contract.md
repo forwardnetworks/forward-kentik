@@ -9,6 +9,15 @@ The export command writes:
 - `observed-flows.json`
 - `forward-kentik-report.json`
 
+The manifest includes `integrity.intentChecksSha256`, a SHA-256 digest of the
+exact `forward-intent-checks.json` bytes. The importer rejects a supplied
+manifest when this digest does not match the checks artifact.
+
+The importer report includes run ID, package ID, checksum, target network,
+target snapshot, timing, and reconciliation counts. `--metrics` writes a
+Prometheus-style text file. `--status-artifact` writes a sanitized status JSON
+for handoff or dashboard use.
+
 The primary ingest path is the offline importer:
 
 ```bash
@@ -18,10 +27,11 @@ npm run forward:import -- --checks dist/forward-intent-checks.json --manifest di
 
 The first command is a dry run. `--apply` creates missing checks only.
 
-Before `--apply`, the importer checks every generated `HostFilter` against
-Forward host lookup. If any source or destination does not resolve in the target
-network, the importer fails before posting checks. This keeps presales/demo
-imports from creating invalid intent checks from raw telemetry IPs.
+During dry-run and before `--apply`, the importer checks every generated
+`HostFilter` and `DeviceFilter` against Forward lookup. Dry-run reports missing
+locations; apply fails before posting checks if missing locations remain. This
+keeps presales/demo imports from creating invalid intent checks from raw
+telemetry IPs.
 
 ## Check Shape
 

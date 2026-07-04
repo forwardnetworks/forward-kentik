@@ -1,8 +1,33 @@
 # Release Notes
 
+## v0.1.1
+
+Production hardening release for Forward Integration for Kentik.
+
+### Added
+
+- Manifest and intent-check JSON schema validation in CI.
+- SHA-256 integrity metadata for generated intent-check packages and importer
+  checksum verification before Forward API calls.
+- Approval-gated changed-check updates, stale-check deactivation, package
+  signature verification, and change-window metadata for controlled applies.
+- Runtime metrics/status artifacts, release archive checksums, optional detached
+  release signatures, and acceptance bundle generation.
+- GitHub release workflow, live compatibility workflow, Dependabot, CODEOWNERS,
+  hardened CI permissions, and branch-protection-ready status checks.
+- Systemd and Kubernetes runtime templates plus production hardening, RBAC,
+  approval workflow, incident response, and acceptance checklist documentation.
+
+### Changed
+
+- Public naming now uses "Forward Integration for Kentik" instead of a product
+  style name.
+- Kentik and Forward API callers now use explicit timeout and retry behavior.
+- Import dry-runs perform Forward host/device preflight checks by default.
+
 ## v0.1.0
 
-Initial public MVP for the Forward Kentik field integration.
+Initial public MVP for Forward Integration for Kentik.
 
 ### Included
 
@@ -21,7 +46,9 @@ Initial public MVP for the Forward Kentik field integration.
 - Public demo screenshots and seeded demo fixture with no committed customer
   data or credentials.
 - CI gates for repo hygiene, export generation, dashboard rendering, unit tests,
-  workflow smoke, screenshot presence, and importer smoke tests.
+  workflow smoke, screenshot presence, schema/checksum validation, scale smoke,
+  release archive/checksum/signing smoke, acceptance bundle generation,
+  dependency audit/SBOM signal, linting, and importer smoke tests.
 
 ### Not Included
 

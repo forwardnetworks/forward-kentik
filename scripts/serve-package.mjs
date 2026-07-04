@@ -7,7 +7,7 @@ import path from "node:path";
 import { parseArgs } from "../src/io.mjs";
 
 const usage = `
-Forward Kentik package server
+Forward Integration for Kentik package server
 
 Usage:
   node scripts/serve-package.mjs --dir dist --port 8088

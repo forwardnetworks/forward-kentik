@@ -13,15 +13,23 @@ const requiredFiles = [
   "CONTRIBUTING.md",
   "LICENSE",
   "SECURITY.md",
+  "eslint.config.mjs",
   "docs/harness-engineering.md",
   "docs/workflow.md",
   "docs/field-integration-guidelines.md",
   "docs/operator-runbook.md",
+  "docs/incident-response.md",
+  "docs/rbac.md",
+  "docs/customer-acceptance-checklist.md",
+  "docs/approval-workflow.md",
   "docs/kentik-api.md",
   "docs/forward-ingest-contract.md",
   "docs/demo-data.md",
   "docs/validation-matrix.md",
   "docs/release-notes.md",
+  "docs/release-provenance.md",
+  "docs/runtime-templates.md",
+  "docs/production-hardening.md",
   "docs/examples/top-flows-query.json",
   "docs/examples/location-map.demo.json",
   "fixtures/kentik-topxdata.demo.json",
@@ -35,19 +43,36 @@ const requiredFiles = [
   "src/normalize.mjs",
   "src/forward-package.mjs",
   "src/forward-location-template.mjs",
+  "schemas/forward-package-manifest.schema.json",
+  "schemas/forward-intent-checks.schema.json",
+  "deploy/systemd/forward-kentik-importer.service",
+  "deploy/systemd/forward-kentik-importer.timer",
+  "deploy/systemd/forward-kentik.env.example",
+  "deploy/kubernetes/forward-kentik-importer-cronjob.yaml",
+  "deploy/kubernetes/forward-kentik-configmap.example.yaml",
+  "deploy/kubernetes/forward-kentik-secret.example.yaml",
   "scripts/kentik-export.mjs",
   "scripts/kentik-live-smoke.mjs",
   "scripts/seed-kentik-demo-data.mjs",
+  "scripts/acceptance-bundle.mjs",
   "scripts/forward-import-package.mjs",
   "scripts/forward-import-smoke.mjs",
+  "scripts/sign-forward-package.mjs",
   "scripts/forward-location-map-template.mjs",
   "scripts/forward-data-connector-config.mjs",
   "scripts/build-dashboard.mjs",
   "scripts/serve-dashboard.mjs",
   "scripts/render-demo-screenshots.mjs",
+  "scripts/package-release-artifacts.mjs",
+  "scripts/release-checksums.mjs",
+  "scripts/sign-release-checksums.mjs",
+  "scripts/generate-release-signing-keypair.mjs",
+  "scripts/schema-validate.mjs",
   "scripts/serve-package.mjs",
+  "scripts/scale-smoke.mjs",
   "scripts/workflow-smoke.mjs",
   "test/normalize.test.mjs",
+  "test/approval-import-flow.test.mjs",
   "test/forward-package.test.mjs",
   "test/location-map.test.mjs",
   "test/dashboard-server.test.mjs",
@@ -55,8 +80,14 @@ const requiredFiles = [
   "test/demo-seed.test.mjs",
   "test/data-connector.test.mjs",
   "test/forward-import.test.mjs",
+  "test/acceptance-bundle.test.mjs",
   "test/forward-location-template.test.mjs",
+  "test/release-artifacts.test.mjs",
   ".github/workflows/ci.yml",
+  ".github/workflows/release.yml",
+  ".github/workflows/live-compatibility.yml",
+  ".github/CODEOWNERS",
+  ".github/dependabot.yml",
   ".github/pull_request_template.md",
   ".github/ISSUE_TEMPLATE/config.yml",
   ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -137,6 +168,8 @@ if (await exists("AGENTS.md")) {
     "docs/field-integration-guidelines.md",
     "docs/validation-matrix.md",
     "docs/release-notes.md",
+    "docs/release-provenance.md",
+    "docs/production-hardening.md",
     "docs/harness-engineering.md",
   ]) {
     if (!agentMap.includes(target)) {
@@ -159,6 +192,19 @@ const secretPatterns = [
     regex: /\/Users\/[A-Za-z0-9._-]+/,
   },
 ];
+
+for (const [index, pattern] of (process.env.FORWARD_SENSITIVE_PATTERNS || "")
+  .split(/\r?\n/)
+  .map((line) => line.trim())
+  .filter(Boolean)
+  .entries()) {
+  secretPatterns.push({
+    name: `Configured sensitive pattern ${index + 1}`,
+    regex: pattern.startsWith("re:")
+      ? new RegExp(pattern.slice(3))
+      : new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+  });
+}
 
 for (const file of await walkTextFiles()) {
   if (file === "scripts/validate-repo.mjs") {

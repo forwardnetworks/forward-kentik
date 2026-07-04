@@ -49,7 +49,9 @@ create only the missing Kentik-managed checks in Forward.
    npm run forward:import -- \
      --checks dist/forward-intent-checks.json \
      --manifest dist/forward-kentik-manifest.json \
-     --report dist/forward-import-dry-run-report.json
+     --report dist/forward-import-dry-run-report.json \
+     --metrics dist/forward-import-dry-run.prom \
+     --status-artifact dist/forward-ingest-status.json
    ```
 
 7. Rebuild the dashboard with the dry-run report:
@@ -65,7 +67,9 @@ create only the missing Kentik-managed checks in Forward.
      --checks dist/forward-intent-checks.json \
      --manifest dist/forward-kentik-manifest.json \
      --apply \
-     --report dist/forward-import-apply-report.json
+     --report dist/forward-import-apply-report.json \
+     --metrics dist/forward-import-apply.prom \
+     --status-artifact dist/forward-ingest-status.json
    ```
 
 9. Re-run dry-run to prove reconciliation:
@@ -87,6 +91,10 @@ Expected post-apply result: `create: 0`, `unchanged: N`, `changed: 0`,
 - Checks are reconciled by exactly one `kentik-key:*` tag.
 - Changed and stale checks are report-only.
 - Host and device locations are preflighted before apply.
+- Dry-run and apply reports include a run ID, package checksum, target network,
+  target snapshot, timing, and reconciliation counts.
+- Optional metrics/status files provide sanitized operational evidence without
+  credentials or raw package rows.
 - Data Connector output is optional visibility only; it does not create intent
   checks.
 

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: forward-kentik-importer
+data:
+  FORWARD_KENTIK_PACKAGE_URL: "https://package.example.com/forward-kentik/latest/"
+  FORWARD_KENTIK_MAX_PACKAGE_AGE_MINUTES: "1440"

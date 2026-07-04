@@ -1,0 +1,58 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      RELEASE_SIGNING_PRIVATE_KEY_PEM: ${{ secrets.RELEASE_SIGNING_PRIVATE_KEY_PEM }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run ci
+      - run: npm run release:package
+      - name: Sign release checksums
+        if: env.RELEASE_SIGNING_PRIVATE_KEY_PEM != ''
+        run: npm run release:sign -- --checksums dist/release/SHA256SUMS --signature dist/release/SHA256SUMS.sig --public-key-out dist/release/SHA256SUMS.pub
+      - name: Upload release artifacts
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          assets=(
+            dist/release/forward-kentik-*.tgz
+            dist/release/forward-kentik-release-manifest.json
+            dist/release/SHA256SUMS
+          )
+          if [ -f dist/release/SHA256SUMS.sig ]; then
+            assets+=(dist/release/SHA256SUMS.sig)
+          fi
+          if [ -f dist/release/SHA256SUMS.pub ]; then
+            assets+=(dist/release/SHA256SUMS.pub)
+          fi
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "${GITHUB_REF_NAME}" \
+            --notes-file docs/release-notes.md \
+            "${assets[@]}"
+      - name: Attest archive
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: "dist/release/forward-kentik-*.tgz"

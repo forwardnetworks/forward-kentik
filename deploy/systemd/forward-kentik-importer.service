@@ -1,0 +1,21 @@
+[Unit]
+Description=Forward Integration for Kentik importer
+Documentation=https://github.com/forwardnetworks/forward-kentik
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=forward-kentik
+Group=forward-kentik
+WorkingDirectory=/opt/forward-kentik
+EnvironmentFile=/etc/forward-kentik/forward-kentik.env
+ExecStart=/usr/bin/env node scripts/forward-import-package.mjs \
+  --package-url ${FORWARD_KENTIK_PACKAGE_URL} \
+  --report ${FORWARD_KENTIK_REPORT_PATH} \
+  --metrics ${FORWARD_KENTIK_METRICS_PATH} \
+  --status-artifact ${FORWARD_KENTIK_STATUS_PATH} \
+  --max-package-age-minutes ${FORWARD_KENTIK_MAX_PACKAGE_AGE_MINUTES}
+
+[Install]
+WantedBy=multi-user.target

@@ -9,7 +9,7 @@ import { buildDashboardFile } from "./build-dashboard.mjs";
 import { parseArgs } from "../src/io.mjs";
 
 const usage = `
-Serve Forward Kentik dashboard
+Serve Forward Integration for Kentik dashboard
 
 Usage:
   node scripts/serve-dashboard.mjs --dist dist --port 4173
@@ -44,7 +44,7 @@ const main = async () => {
   const server = createDashboardServer({ dist });
 
   server.listen(port, "127.0.0.1", () => {
-    process.stdout.write(`Forward Kentik dashboard: http://127.0.0.1:${port}/dashboard/\n`);
+    process.stdout.write(`Forward Integration for Kentik dashboard: http://127.0.0.1:${port}/dashboard/\n`);
   });
 };
 

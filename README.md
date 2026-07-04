@@ -1,9 +1,9 @@
-# Forward Kentik
+# Forward Integration for Kentik
 
 [![ci](https://github.com/forwardnetworks/forward-kentik/actions/workflows/ci.yml/badge.svg)](https://github.com/forwardnetworks/forward-kentik/actions/workflows/ci.yml)
 
-Forward field integration for turning Kentik flow evidence into Forward
-intent-check import packages.
+Forward Integration for Kentik is a Forward field integration for turning
+Kentik flow evidence into Forward intent-check import packages.
 
 This repository is a field integration, not an officially supported Forward
 product integration. It is intended for repeatable customer demos, presales
@@ -154,8 +154,10 @@ npm run dashboard:serve
 npm run kentik:seed:demo
 npm run forward:import -- --validate-only --checks dist/forward-intent-checks.json --manifest dist/forward-kentik-manifest.json
 npm run screenshots:render
+npm run schemas:validate
 npm test
 npm run workflow:smoke
+npm run scale:smoke
 npm run repo:validate
 npm run ci
 ```
@@ -167,10 +169,12 @@ credentials, or live flow exports. The default gates are:
 
 - `npm run repo:validate`
 - `npm run kentik:export`
+- `npm run schemas:validate`
 - `npm run screenshots:render`
 - `npm test`
 - `npm run workflow:smoke`
 - `npm run forward:import:smoke`
+- `npm run scale:smoke`
 
 See [docs/field-integration-guidelines.md](docs/field-integration-guidelines.md)
 for branding and support boundaries.

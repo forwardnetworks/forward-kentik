@@ -119,7 +119,10 @@ const main = async () => {
   const firstExisting = withResultFields(checks[0], 0);
   const state = { existingChecks: [firstExisting], devices: [] };
   const { server, port } = await startFakeForward(state);
-  const reportPath = path.join(await mkdtemp(path.join(os.tmpdir(), "forward-kentik-import-")), "report.json");
+  const outputDir = await mkdtemp(path.join(os.tmpdir(), "forward-kentik-import-"));
+  const reportPath = path.join(outputDir, "report.json");
+  const metricsPath = path.join(outputDir, "metrics.prom");
+  const statusPath = path.join(outputDir, "status.json");
 
   try {
     const dryRun = await runImporter(
@@ -130,6 +133,10 @@ const main = async () => {
         "dist/forward-kentik-manifest.json",
         "--report",
         reportPath,
+        "--metrics",
+        metricsPath,
+        "--status-artifact",
+        statusPath,
       ],
       {
         FORWARD_BASE_URL: `http://127.0.0.1:${port}`,
@@ -142,6 +149,10 @@ const main = async () => {
     assert.equal(dryRun.counts.unchanged, 1);
     assert.equal(dryRun.counts.create, checks.length - 1);
     assert.equal(state.existingChecks.length, 1);
+    assert.match(await readFile(metricsPath, "utf8"), /forward_kentik_import_planned_checks/);
+    const status = JSON.parse(await readFile(statusPath, "utf8"));
+    assert.equal(status.schemaVersion, "forward-kentik-ingest-status/v0.1");
+    assert.equal(status.runId, dryRun.runId);
 
     const applied = await runImporter(
       [
@@ -168,6 +179,8 @@ const main = async () => {
           dryRunUnchanged: dryRun.counts.unchanged,
           appliedChecks: state.existingChecks.length,
           reportPath,
+          metricsPath,
+          statusPath,
         },
         null,
         2,

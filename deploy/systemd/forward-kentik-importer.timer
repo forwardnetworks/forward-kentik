@@ -1,0 +1,10 @@
+[Unit]
+Description=Forward Integration for Kentik importer schedule
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

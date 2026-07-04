@@ -139,6 +139,11 @@ export const buildForwardPackage = (flows, options = {}) => {
       observedFlows: "observed-flows.json",
       report: "forward-kentik-report.json",
     },
+    integrity: {
+      algorithm: "sha256",
+      intentChecksSha256: sha256Hex(artifactJsonText(checks)),
+      observedFlowsSha256: sha256Hex(artifactJsonText(flows)),
+    },
     observedFlows: {
       count: flows.length,
       eligible: checks.length,
@@ -208,8 +213,18 @@ export const validateForwardPackage = ({ manifest, checks }) => {
   if (manifest?.intentChecks?.count !== checks.length) {
     failures.push("manifest intentChecks.count does not match checks length");
   }
+  if (manifest?.integrity?.algorithm !== "sha256") {
+    failures.push("manifest integrity.algorithm must be sha256");
+  }
+  if (manifest?.integrity?.intentChecksSha256 !== sha256Hex(artifactJsonText(checks))) {
+    failures.push("manifest integrity.intentChecksSha256 does not match checks payload");
+  }
   return failures;
 };
+
+export const artifactJsonText = (value) => `${JSON.stringify(value, null, 2)}\n`;
+
+export const sha256Hex = (text) => createHash("sha256").update(text, "utf8").digest("hex");
 
 const packageId = (checks) => {
   const digest = createHash("sha256")

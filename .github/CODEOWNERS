@@ -1,0 +1,13 @@
+# Code owners for the Forward Integration for Kentik. GitHub requests review
+# from the owner(s) below on every pull request touching matched paths.
+* @captainpacket @brandonheller
+
+# High-risk surfaces - keep owned explicitly even if the global owner changes.
+/scripts/ @captainpacket @brandonheller
+/src/ @captainpacket @brandonheller
+/schemas/ @captainpacket @brandonheller
+/deploy/ @captainpacket @brandonheller
+/docs/ @captainpacket @brandonheller
+/.github/ @captainpacket @brandonheller
+/package.json @captainpacket @brandonheller
+/package-lock.json @captainpacket @brandonheller

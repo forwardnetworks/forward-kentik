@@ -7,7 +7,7 @@ import { parseArgs, readJsonFile, writeJsonFile } from "../src/io.mjs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 
 const usage = `
-Build Forward Kentik dashboard
+Build Forward Integration for Kentik dashboard
 
 Usage:
   node scripts/build-dashboard.mjs --dist dist --out dist/dashboard/index.html

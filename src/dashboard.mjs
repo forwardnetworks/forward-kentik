@@ -15,13 +15,13 @@ export const buildDashboardHtml = ({ flows, checks, manifest, report, importRepo
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Forward Kentik Dashboard</title>
+  <title>Forward Integration for Kentik Dashboard</title>
   <style>${css()}</style>
 </head>
 <body>
   <header class="topbar">
     <div class="brand">FORW<span>↗</span>RD</div>
-    <div class="select">Forward Kentik</div>
+    <div class="select">Forward Integration for Kentik</div>
     <div class="timestamp">${escapeHtml(formatTimestamp(manifest.generatedAt))}</div>
     <div class="user">Field integration</div>
   </header>

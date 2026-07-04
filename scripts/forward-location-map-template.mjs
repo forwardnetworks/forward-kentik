@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { buildLocationMapTemplate } from "../src/forward-location-template.mjs";
 import { parseArgs, readJsonFile, writeJsonFile } from "../src/io.mjs";

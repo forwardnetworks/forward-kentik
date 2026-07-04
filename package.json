@@ -1,6 +1,6 @@
 {
   "name": "forward-kentik",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Forward field integration for turning Kentik flow evidence into Forward intent-check packages",
   "type": "module",
   "repository": {
@@ -17,6 +17,7 @@
     "kentik:seed:demo": "node scripts/seed-kentik-demo-data.mjs",
     "forward:import": "node scripts/forward-import-package.mjs",
     "forward:import:smoke": "node scripts/forward-import-smoke.mjs",
+    "forward:sign": "node scripts/sign-forward-package.mjs",
     "forward:data-connector": "node scripts/forward-data-connector-config.mjs",
     "forward:location-map": "node scripts/forward-location-map-template.mjs",
     "dashboard:build": "node scripts/build-dashboard.mjs",
@@ -24,13 +25,34 @@
     "package:serve": "node scripts/serve-package.mjs",
     "screenshots:render": "node scripts/render-demo-screenshots.mjs",
     "repo:validate": "node scripts/validate-repo.mjs",
+    "schemas:validate": "node scripts/schema-validate.mjs",
     "workflow:smoke": "node scripts/workflow-smoke.mjs",
+    "scale:smoke": "node scripts/scale-smoke.mjs",
+    "acceptance:bundle": "node scripts/acceptance-bundle.mjs",
+    "release:checksums": "node scripts/release-checksums.mjs",
+    "release:package": "node scripts/package-release-artifacts.mjs",
+    "release:package:smoke": "node scripts/package-release-artifacts.mjs",
+    "release:sign": "node scripts/sign-release-checksums.mjs",
+    "release:signing-key:generate": "node scripts/generate-release-signing-keypair.mjs",
+    "security:audit": "npm audit --omit=dev --audit-level=high",
+    "sbom:check": "npm sbom --omit=dev --sbom-format=cyclonedx > /tmp/forward-kentik-sbom.cdx.json",
+    "whitespace:check": "git diff --check",
+    "lint": "eslint .",
     "test": "node --test test/*.test.mjs",
-    "ci": "npm run repo:validate && npm run kentik:export && npm run dashboard:build && npm run screenshots:render && npm test && npm run workflow:smoke && npm run forward:import:smoke"
+    "ci": "npm run repo:validate && npm run whitespace:check && npm run kentik:export && npm run schemas:validate && npm run dashboard:build && npm run screenshots:render && npm test && npm run workflow:smoke && npm run forward:import:smoke && npm run scale:smoke && npm run acceptance:bundle && npm run release:package:smoke && npm run security:audit && npm run sbom:check && npm run lint"
   },
   "engines": {
     "node": ">=24.0.0"
   },
   "author": "Forward Networks",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "eslint": "^10.6.0",
+    "eslint-plugin-n": "^18.2.1",
+    "eslint-plugin-no-secrets": "^2.3.3",
+    "eslint-plugin-security": "^4.0.1"
+  }
 }

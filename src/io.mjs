@@ -11,7 +11,15 @@ export const writeJsonFile = async (filePath, value) => {
 
 export const parseArgs = (argv) => {
   const args = { _: [] };
-  const booleanFlags = new Set(["apply", "collect", "help", "include-low-confidence", "validate-only"]);
+  const booleanFlags = new Set([
+    "apply",
+    "collect",
+    "help",
+    "include-low-confidence",
+    "skip-checksums",
+    "validate-only",
+    "verify",
+  ]);
   for (let index = 0; index < argv.length; index += 1) {
     const current = argv[index];
     if (!current.startsWith("--")) {

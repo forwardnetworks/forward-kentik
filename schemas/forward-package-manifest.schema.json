@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/forwardnetworks/forward-kentik/schemas/forward-package-manifest.schema.json",
+  "title": "Forward Integration for Kentik package manifest",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schemaVersion",
+    "packageType",
+    "packageId",
+    "generatedAt",
+    "source",
+    "artifacts",
+    "integrity",
+    "observedFlows",
+    "intentChecks",
+    "reconciliation"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "forward-kentik/v0.1" },
+    "packageType": { "const": "forward-intent-import" },
+    "packageId": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["platform", "app", "writePolicy"],
+      "properties": {
+        "platform": { "const": "kentik" },
+        "app": { "const": "forward-kentik" },
+        "writePolicy": { "const": "kentik-never-writes-forward" }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest", "intentChecks", "observedFlows", "report"],
+      "properties": {
+        "manifest": { "const": "forward-kentik-manifest.json" },
+        "intentChecks": { "const": "forward-intent-checks.json" },
+        "observedFlows": { "const": "observed-flows.json" },
+        "report": { "const": "forward-kentik-report.json" }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "intentChecksSha256"],
+      "properties": {
+        "algorithm": { "const": "sha256" },
+        "intentChecksSha256": { "$ref": "#/definitions/sha256" },
+        "observedFlowsSha256": { "$ref": "#/definitions/sha256" }
+      }
+    },
+    "observedFlows": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "eligible", "skipped"],
+      "properties": {
+        "count": { "$ref": "#/definitions/nonNegativeInteger" },
+        "eligible": { "$ref": "#/definitions/nonNegativeInteger" },
+        "skipped": { "$ref": "#/definitions/nonNegativeInteger" }
+      }
+    },
+    "intentChecks": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["count", "checkType", "payloadShape", "bulkEndpoint", "dedupeRequiredBeforePost"],
+      "properties": {
+        "count": { "$ref": "#/definitions/nonNegativeInteger" },
+        "checkType": { "const": "Existential" },
+        "payloadShape": { "const": "NewNetworkCheck[]" },
+        "bulkEndpoint": { "const": "/api/snapshots/{snapshotId}/checks?bulk" },
+        "dedupeRequiredBeforePost": { "const": true }
+      }
+    },
+    "reconciliation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requiredTagPrefix", "defaultApplyPolicy", "changedChecks", "staleChecks"],
+      "properties": {
+        "requiredTagPrefix": { "const": "kentik-key:" },
+        "defaultApplyPolicy": { "const": "create-missing-only" },
+        "changedChecks": { "const": "report-only" },
+        "staleChecks": { "const": "report-only" }
+      }
+    }
+  },
+  "definitions": {
+    "nonNegativeInteger": { "type": "integer", "minimum": 0 },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

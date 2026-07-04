@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { createHash } from "node:crypto";
+import { createHash, randomUUID, verify as cryptoVerify } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import { setTimeout as sleep } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
@@ -10,6 +10,7 @@ const DEFAULT_MANIFEST_FILE_NAME = "forward-kentik-manifest.json";
 const DEFAULT_BATCH_SIZE = 500;
 const DEFAULT_MAX_RETRIES = 3;
 const DEFAULT_MAX_PACKAGE_AGE_MINUTES = 24 * 60;
+const DEFAULT_TIMEOUT_MS = 30_000;
 const PACKAGE_SCHEMA_VERSION = "forward-kentik/v0.1";
 const PACKAGE_TYPE = "forward-intent-import";
 const REQUIRED_KEY_PREFIX = "kentik-key:";
@@ -18,7 +19,7 @@ const ALLOWED_CHECK_TYPES = new Set(["Existential"]);
 const LOCAL_HTTP_HOSTS = new Set(["127.0.0.1", "::1", "localhost"]);
 
 const usage = `
-Forward Kentik package importer
+Forward Integration for Kentik package importer
 
 Required environment when not using --validate-only:
   FORWARD_BASE_URL       Example: https://forward.example.com
@@ -32,22 +33,40 @@ Usage:
   node scripts/forward-import-package.mjs --package-url https://package.example.com/forward-kentik/latest/ --report forward-import-report.json
 
 Options:
-  --apply              Create missing checks. Changed and stale checks are report-only.
+  --apply              Create missing checks. Changed and stale checks are report-only by default.
+  --apply-updates      Replace approved changed generated checks. Requires --apply,
+                       --require-signature, and --require-approval-file.
   --batch-size 500     Batch size for /checks?bulk.
+  --change-window-id id
+                       Require approval file to match this change window ID.
   --checks path        Local Forward NewNetworkCheck[] JSON.
   --checks-url url     Pull checks from a read-only HTTPS URL.
+  --deactivate-stale   Delete approved stale generated checks. Requires --apply,
+                       --require-signature, and --require-approval-file.
   --fail-on-drift      Exit non-zero when changed or stale Kentik-managed checks are found.
   --manifest path      Validate the package manifest before importing.
   --manifest-url url   Pull manifest from a read-only HTTPS URL.
+  --max-deactivations 0
+                       Maximum approved stale checks to delete.
   --max-package-age-minutes 1440
                        Reject manifests older than this age.
   --max-retries 3      Retry count for transient Forward API responses.
+  --max-updates 0      Maximum approved changed checks to replace.
+  --metrics path       Write Prometheus-style import metrics to a text file.
   --package-url url    Pull manifest and checks from a base URL.
+  --public-key path    Verify detached package signature with PEM public key.
+  --require-approval-file path
+                       Exact approval artifact for changed/stale kentik keys.
+  --require-signature  Reject package unless signature and public key verify.
   --report path        Write the reconciliation report to a JSON file.
+  --signature path     Detached package signature.
+  --status-artifact path
+                       Write sanitized read-only ingest status JSON.
   --skip-location-preflight
                        Advanced: skip Forward location lookup before --apply.
   --skip-host-preflight
                        Legacy alias for --skip-location-preflight.
+  --timeout-ms 30000   Per Forward/package HTTP request timeout.
   --validate-only      Validate package shape without contacting Forward.
 
 Default mode is dry-run. Apply policy is create-missing-only. Non-local package
@@ -57,19 +76,31 @@ URLs must use HTTPS.
 const SUPPORTED_ARGS = new Set([
   "_",
   "apply",
+  "apply-updates",
   "batch-size",
+  "change-window-id",
   "checks",
   "checks-url",
+  "deactivate-stale",
   "fail-on-drift",
   "help",
   "manifest",
   "manifest-url",
+  "max-deactivations",
   "max-package-age-minutes",
   "max-retries",
+  "max-updates",
+  "metrics",
   "package-url",
+  "public-key",
+  "require-approval-file",
+  "require-signature",
   "report",
+  "signature",
+  "status-artifact",
   "skip-location-preflight",
   "skip-host-preflight",
+  "timeout-ms",
   "validate-only",
 ]);
 
@@ -84,8 +115,11 @@ const parseArgs = (argv) => {
     const key = value.slice(2);
     if (
       key === "apply" ||
+      key === "apply-updates" ||
+      key === "deactivate-stale" ||
       key === "fail-on-drift" ||
       key === "help" ||
+      key === "require-signature" ||
       key === "skip-location-preflight" ||
       key === "skip-host-preflight" ||
       key === "validate-only"
@@ -119,6 +153,22 @@ const validateArgs = (args) => {
   }
 };
 
+const validatePolicyArgs = (args) => {
+  const hasMutationFlag = Boolean(args["apply-updates"] || args["deactivate-stale"]);
+  if (hasMutationFlag && !args.apply) {
+    throw new Error("--apply-updates and --deactivate-stale require --apply.");
+  }
+  if (hasMutationFlag && !args["require-signature"]) {
+    throw new Error("--apply-updates and --deactivate-stale require --require-signature.");
+  }
+  if (hasMutationFlag && !args["require-approval-file"]) {
+    throw new Error("--apply-updates and --deactivate-stale require --require-approval-file.");
+  }
+  if (args["require-signature"] && (!args.signature || !args["public-key"])) {
+    throw new Error("--require-signature requires --signature and --public-key.");
+  }
+};
+
 const requiredEnv = (name) => {
   const value = process.env[name];
   if (!value) {
@@ -127,9 +177,15 @@ const requiredEnv = (name) => {
   return value;
 };
 
-const readJson = async (filePath) => JSON.parse(await readFile(filePath, "utf8"));
+const readJsonWithText = async (filePath) => {
+  const text = await readFile(filePath, "utf8");
+  return { value: JSON.parse(text), text };
+};
+const readText = async (filePath) => readFile(filePath, "utf8");
 const isUrlLocator = (locator) => /^https?:\/\//i.test(locator);
 const joinUrl = (baseUrl, fileName) => `${baseUrl.replace(/\/+$/, "")}/${fileName}`;
+const sha256Hex = (text) => createHash("sha256").update(text, "utf8").digest("hex");
+const packageSignatureText = ({ checksText, manifestText }) => `${manifestText}\n${checksText}`;
 
 const validatePackageUrl = (locator) => {
   const url = new URL(locator);
@@ -144,19 +200,22 @@ const validatePackageUrl = (locator) => {
 
 const readJsonFromLocator = async (locator, label) => {
   if (!isUrlLocator(locator)) {
-    return readJson(locator);
+    return readJsonWithText(locator);
   }
 
   validatePackageUrl(locator);
-  const response = await fetch(locator, { headers: { Accept: "application/json" } });
+  const response = await fetch(locator, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
+  });
   const text = await response.text();
   if (!response.ok) {
     throw new Error(`${label} fetch failed with ${response.status}: ${text.slice(0, 500)}`);
   }
   try {
-    return JSON.parse(text);
+    return { value: JSON.parse(text), text };
   } catch (error) {
-    throw new Error(`${label} did not contain valid JSON: ${error.message}`);
+    throw new Error(`${label} did not contain valid JSON: ${error.message}`, { cause: error });
   }
 };
 
@@ -318,22 +377,33 @@ export const reconcileChecks = (plannedChecks, existingChecks) => {
   return { create, unchanged, changed, stale };
 };
 
-const makeClient = ({ baseUrl, user, password, maxRetries }) => {
+const makeClient = ({ baseUrl, user, password, maxRetries, timeoutMs }) => {
   const auth = Buffer.from(`${user}:${password}`).toString("base64");
   const root = baseUrl.replace(/\/+$/, "");
 
   return async (method, apiPath, options = {}) => {
     for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
-      const response = await fetch(`${root}/api${apiPath}`, {
-        method,
-        headers: {
-          Authorization: `Basic ${auth}`,
-          Accept: "application/json",
-          ...(options.body ? { "Content-Type": "application/json" } : {}),
-          ...options.headers,
-        },
-        body: options.body ? JSON.stringify(options.body) : undefined,
-      });
+      let response;
+      try {
+        response = await fetch(`${root}/api${apiPath}`, {
+          method,
+          headers: {
+            Authorization: `Basic ${auth}`,
+            Accept: "application/json",
+            "User-Agent": "forward-kentik-importer/0.1",
+            ...(options.body ? { "Content-Type": "application/json" } : {}),
+            ...options.headers,
+          },
+          body: options.body ? JSON.stringify(options.body) : undefined,
+          signal: AbortSignal.timeout(timeoutMs),
+        });
+      } catch (error) {
+        if (attempt < maxRetries) {
+          await sleep(retryDelayMs(attempt));
+          continue;
+        }
+        throw new Error(`${method} /api${apiPath} failed: ${error.message}`, { cause: error });
+      }
 
       const text = await response.text();
       if (response.ok) {
@@ -446,6 +516,191 @@ const toNonNegativeInteger = (value, label) => {
 
 const requireString = (value) => typeof value === "string" && value.trim().length > 0;
 
+const elapsedMs = (startedAt) => Date.now() - startedAt.getTime();
+
+const missingLocationCount = (locationPreflight) =>
+  (locationPreflight?.missing?.HostFilter?.length || 0) + (locationPreflight?.missing?.DeviceFilter?.length || 0);
+
+const escapeMetricLabel = (value) =>
+  String(value ?? "")
+    .replaceAll("\\", "\\\\")
+    .replaceAll("\n", "\\n")
+    .replaceAll('"', '\\"');
+
+export const formatPrometheusMetrics = (report) => {
+  const counts = report.counts || {};
+  const lines = [
+    "# HELP forward_kentik_import_planned_checks Planned Kentik-managed checks.",
+    "# TYPE forward_kentik_import_planned_checks gauge",
+    `forward_kentik_import_planned_checks ${report.plannedChecks || 0}`,
+    "# HELP forward_kentik_import_create_checks Checks planned for creation.",
+    "# TYPE forward_kentik_import_create_checks gauge",
+    `forward_kentik_import_create_checks ${counts.create || 0}`,
+    "# HELP forward_kentik_import_unchanged_checks Checks already matching the package.",
+    "# TYPE forward_kentik_import_unchanged_checks gauge",
+    `forward_kentik_import_unchanged_checks ${counts.unchanged || 0}`,
+    "# HELP forward_kentik_import_changed_checks Existing managed checks with generated-field drift.",
+    "# TYPE forward_kentik_import_changed_checks gauge",
+    `forward_kentik_import_changed_checks ${counts.changed || 0}`,
+    "# HELP forward_kentik_import_stale_checks Existing managed checks not present in current package.",
+    "# TYPE forward_kentik_import_stale_checks gauge",
+    `forward_kentik_import_stale_checks ${counts.stale || 0}`,
+    "# HELP forward_kentik_import_missing_locations Host/device locations missing from Forward readiness checks.",
+    "# TYPE forward_kentik_import_missing_locations gauge",
+    `forward_kentik_import_missing_locations ${missingLocationCount(report.locationPreflight)}`,
+    "# HELP forward_kentik_import_duration_seconds Importer runtime duration.",
+    "# TYPE forward_kentik_import_duration_seconds gauge",
+    `forward_kentik_import_duration_seconds ${((report.durationMs || 0) / 1000).toFixed(3)}`,
+    "# HELP forward_kentik_import_mode_info Importer mode metadata.",
+    "# TYPE forward_kentik_import_mode_info gauge",
+    `forward_kentik_import_mode_info{mode="${escapeMetricLabel(report.mode)}",status="${escapeMetricLabel(report.status || "completed")}"} 1`,
+  ];
+  return `${lines.join("\n")}\n`;
+};
+
+export const buildStatusArtifact = (report) => {
+  const missingLocations = missingLocationCount(report.locationPreflight);
+  const warnings = [];
+  if ((report.counts?.changed || 0) > 0) {
+    warnings.push("changed-checks");
+  }
+  if ((report.counts?.stale || 0) > 0) {
+    warnings.push("stale-checks");
+  }
+  if (missingLocations > 0) {
+    warnings.push("missing-locations");
+  }
+
+  return {
+    schemaVersion: "forward-kentik-ingest-status/v0.1",
+    runId: report.runId,
+    generatedAt: report.finishedAt,
+    mode: report.mode,
+    status: report.status || "completed",
+    packageId: report.package?.packageId || null,
+    checksSha256: report.package?.checksSha256 || null,
+    networkId: report.networkId || null,
+    snapshotId: report.snapshotId || null,
+    plannedChecks: report.plannedChecks || 0,
+    counts: report.counts || null,
+    locationReadiness: report.locationPreflight
+      ? {
+          checked: report.locationPreflight.checked,
+          missing: {
+            HostFilter: report.locationPreflight.missing.HostFilter.length,
+            DeviceFilter: report.locationPreflight.missing.DeviceFilter.length,
+          },
+          unchecked: {
+            InterfaceFilter: report.locationPreflight.unchecked.InterfaceFilter.length,
+          },
+        }
+      : null,
+    warnings,
+  };
+};
+
+export const verifyPackageSignature = ({ checksText, manifestText, publicKeyPem, signature }) =>
+  cryptoVerify(
+    null,
+    Buffer.from(packageSignatureText({ checksText, manifestText }), "utf8"),
+    publicKeyPem,
+    signature,
+  );
+
+export const validateApproval = (approval, { changeWindowId, packageId, now = new Date() } = {}) => {
+  const errors = [];
+  if (!approval || typeof approval !== "object" || Array.isArray(approval)) {
+    throw new Error("Approval artifact must be an object.");
+  }
+  if (approval.schemaVersion !== "forward-kentik-approval/v0.1") {
+    errors.push("approval.schemaVersion must be forward-kentik-approval/v0.1.");
+  }
+  if (!requireString(approval.packageId)) {
+    errors.push("approval.packageId is required.");
+  } else if (packageId && approval.packageId !== packageId) {
+    errors.push("approval.packageId does not match package.");
+  }
+  if (changeWindowId && approval.changeWindowId !== changeWindowId) {
+    errors.push("approval.changeWindowId does not match --change-window-id.");
+  }
+  if (!requireString(approval.approvedBy)) {
+    errors.push("approval.approvedBy is required.");
+  }
+  if (!requireString(approval.reason)) {
+    errors.push("approval.reason is required.");
+  }
+  if (!requireString(approval.expiresAt)) {
+    errors.push("approval.expiresAt is required.");
+  } else {
+    const expiresAtMs = Date.parse(approval.expiresAt);
+    if (!Number.isFinite(expiresAtMs)) {
+      errors.push("approval.expiresAt must be an ISO timestamp.");
+    } else if (expiresAtMs <= now.getTime()) {
+      errors.push("approval has expired.");
+    }
+  }
+
+  for (const field of ["approvedChangedKeys", "approvedStaleKeys"]) {
+    if (approval[field] !== undefined && !Array.isArray(approval[field])) {
+      errors.push(`approval.${field} must be an array.`);
+    }
+    for (const key of approval[field] || []) {
+      if (!String(key).startsWith(REQUIRED_KEY_PREFIX)) {
+        errors.push(`approval.${field} contains a key without ${REQUIRED_KEY_PREFIX} prefix.`);
+      }
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Invalid approval artifact:\n${errors.map((error) => `- ${error}`).join("\n")}`);
+  }
+};
+
+const assertApprovedKeysAreCurrent = ({ approvedKeys, currentKeys, label }) => {
+  const unknown = [...approvedKeys].filter((key) => !currentKeys.has(key));
+  if (unknown.length > 0) {
+    throw new Error(`Approval includes ${unknown.length} ${label} key(s) not present in current dry-run: ${unknown.slice(0, 10).join(", ")}`);
+  }
+};
+
+export const selectApprovedMutations = ({
+  approval,
+  applyUpdates,
+  deactivateStale,
+  maxDeactivations,
+  maxUpdates,
+  reconciliation,
+}) => {
+  const approvedChangedKeys = new Set(approval?.approvedChangedKeys || []);
+  const approvedStaleKeys = new Set(approval?.approvedStaleKeys || []);
+  const currentChangedKeys = new Set(reconciliation.changed.map((item) => item.key).filter(Boolean));
+  const currentStaleKeys = new Set(reconciliation.stale.map((item) => item.key).filter(Boolean));
+  assertApprovedKeysAreCurrent({ approvedKeys: approvedChangedKeys, currentKeys: currentChangedKeys, label: "changed" });
+  assertApprovedKeysAreCurrent({ approvedKeys: approvedStaleKeys, currentKeys: currentStaleKeys, label: "stale" });
+
+  const updates = applyUpdates ? reconciliation.changed.filter((item) => approvedChangedKeys.has(item.key)) : [];
+  const deactivations = deactivateStale ? reconciliation.stale.filter((item) => approvedStaleKeys.has(item.key)) : [];
+  if (updates.length > maxUpdates) {
+    throw new Error(`Approved update count ${updates.length} exceeds --max-updates ${maxUpdates}.`);
+  }
+  if (deactivations.length > maxDeactivations) {
+    throw new Error(`Approved stale deactivation count ${deactivations.length} exceeds --max-deactivations ${maxDeactivations}.`);
+  }
+  return { deactivations, updates };
+};
+
+const writeRunArtifacts = async ({ metricsPath, report, reportPath, statusArtifactPath }) => {
+  if (reportPath) {
+    await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`);
+  }
+  if (metricsPath) {
+    await writeFile(metricsPath, formatPrometheusMetrics(report));
+  }
+  if (statusArtifactPath) {
+    await writeFile(statusArtifactPath, `${JSON.stringify(buildStatusArtifact(report), null, 2)}\n`);
+  }
+};
+
 const requireObject = (value, label, errors) => {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     errors.push(`${label} must be an object.`);
@@ -505,7 +760,7 @@ const invalidManifestError = (errors) =>
 export const validateManifest = (
   manifest,
   plannedChecks,
-  { maxPackageAgeMinutes = DEFAULT_MAX_PACKAGE_AGE_MINUTES } = {},
+  { checksText, maxPackageAgeMinutes = DEFAULT_MAX_PACKAGE_AGE_MINUTES } = {},
 ) => {
   const errors = [];
   if (!requireObject(manifest, "manifest", errors)) {
@@ -553,6 +808,17 @@ export const validateManifest = (
     }
   }
 
+  if (requireObject(manifest.integrity, "manifest.integrity", errors)) {
+    if (manifest.integrity.algorithm !== "sha256") {
+      errors.push("manifest.integrity.algorithm must be sha256.");
+    }
+    if (!/^[a-f0-9]{64}$/.test(manifest.integrity.intentChecksSha256 || "")) {
+      errors.push("manifest.integrity.intentChecksSha256 must be a SHA-256 hex digest.");
+    } else if (checksText && manifest.integrity.intentChecksSha256 !== sha256Hex(checksText)) {
+      errors.push("manifest.integrity.intentChecksSha256 does not match the checks artifact.");
+    }
+  }
+
   if (requireObject(manifest.intentChecks, "manifest.intentChecks", errors)) {
     if (manifest.intentChecks.count !== plannedChecks.length) {
       errors.push(
@@ -594,41 +860,79 @@ export const validateManifest = (
 };
 
 const main = async () => {
+  const startedAt = new Date();
+  const runId = randomUUID();
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
     process.stdout.write(usage);
     return;
   }
   validateArgs(args);
+  validatePolicyArgs(args);
 
   const apply = Boolean(args.apply);
+  const applyUpdates = Boolean(args["apply-updates"]);
+  const deactivateStale = Boolean(args["deactivate-stale"]);
   const batchSize = args["batch-size"] ? toPositiveInteger(args["batch-size"], "--batch-size") : DEFAULT_BATCH_SIZE;
+  const maxDeactivations = args["max-deactivations"]
+    ? toNonNegativeInteger(args["max-deactivations"], "--max-deactivations")
+    : 0;
   const maxRetries = args["max-retries"]
     ? toNonNegativeInteger(args["max-retries"], "--max-retries")
     : DEFAULT_MAX_RETRIES;
+  const maxUpdates = args["max-updates"] ? toNonNegativeInteger(args["max-updates"], "--max-updates") : 0;
   const maxPackageAgeMinutes = args["max-package-age-minutes"]
     ? toPositiveInteger(args["max-package-age-minutes"], "--max-package-age-minutes")
     : DEFAULT_MAX_PACKAGE_AGE_MINUTES;
+  const timeoutMs = args["timeout-ms"] ? toPositiveInteger(args["timeout-ms"], "--timeout-ms") : DEFAULT_TIMEOUT_MS;
 
   const locators = resolvePackageLocators(args);
-  const plannedChecks = await readJsonFromLocator(locators.checks, "Forward checks package");
+  const checksArtifact = await readJsonFromLocator(locators.checks, "Forward checks package");
+  const plannedChecks = checksArtifact.value;
   validatePlannedChecks(plannedChecks);
+  let manifest = null;
+  let manifestText = null;
   if (locators.manifest) {
-    const manifest = await readJsonFromLocator(locators.manifest, "Forward package manifest");
-    validateManifest(manifest, plannedChecks, { maxPackageAgeMinutes });
+    const manifestArtifact = await readJsonFromLocator(locators.manifest, "Forward package manifest");
+    manifest = manifestArtifact.value;
+    manifestText = manifestArtifact.text;
+    validateManifest(manifest, plannedChecks, { checksText: checksArtifact.text, maxPackageAgeMinutes });
+  }
+
+  if (args["require-signature"]) {
+    if (!manifestText) {
+      throw new Error("--require-signature requires a manifest.");
+    }
+    const publicKeyPem = await readText(args["public-key"]);
+    const signature = await readFile(args.signature);
+    if (!verifyPackageSignature({ checksText: checksArtifact.text, manifestText, publicKeyPem, signature })) {
+      throw new Error("Package signature verification failed.");
+    }
   }
 
   if (args["validate-only"]) {
+    const finishedAt = new Date();
     const report = {
+      runId,
       mode: "validate-only",
-      checksSource: locators.checks,
-      manifestSource: locators.manifest || null,
-      plannedChecks: plannedChecks.length,
       status: "valid",
+      startedAt: startedAt.toISOString(),
+      finishedAt: finishedAt.toISOString(),
+      durationMs: elapsedMs(startedAt),
+      package: {
+        checksSource: locators.checks,
+        manifestSource: locators.manifest || null,
+        packageId: manifest?.packageId || null,
+        checksSha256: sha256Hex(checksArtifact.text),
+      },
+      plannedChecks: plannedChecks.length,
     };
-    if (args.report) {
-      await writeFile(args.report, `${JSON.stringify(report, null, 2)}\n`);
-    }
+    await writeRunArtifacts({
+      metricsPath: args.metrics,
+      report,
+      reportPath: args.report,
+      statusArtifactPath: args["status-artifact"],
+    });
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     return;
   }
@@ -639,6 +943,7 @@ const main = async () => {
     user: requiredEnv("FORWARD_USER"),
     password: requiredEnv("FORWARD_PASSWORD"),
     maxRetries,
+    timeoutMs,
   });
 
   const latestSnapshot = await api("GET", `/networks/${networkId}/snapshots/latestProcessed`);
@@ -647,14 +952,29 @@ const main = async () => {
   const reconciliation = reconcileChecks(plannedChecks, existingChecks);
   const createChecks = reconciliation.create.map((item) => item.check);
   let locationPreflight = null;
+  let approval = null;
+  let approvedMutations = { deactivations: [], updates: [] };
 
-  if (apply && createChecks.length > 0 && !args["skip-host-preflight"] && !args["skip-location-preflight"]) {
+  if (args["require-approval-file"]) {
+    approval = (await readJsonWithText(args["require-approval-file"])).value;
+    validateApproval(approval, { changeWindowId: args["change-window-id"], packageId: manifest?.packageId });
+    approvedMutations = selectApprovedMutations({
+      approval,
+      applyUpdates,
+      deactivateStale,
+      maxDeactivations,
+      maxUpdates,
+      reconciliation,
+    });
+  }
+
+  if (createChecks.length > 0 && !args["skip-host-preflight"] && !args["skip-location-preflight"]) {
     locationPreflight = await preflightLocations({ api, networkId, checks: createChecks });
     const missing = [
       ...locationPreflight.missing.HostFilter.map((specifier) => `HostFilter:${specifier}`),
       ...locationPreflight.missing.DeviceFilter.map((specifier) => `DeviceFilter:${specifier}`),
     ];
-    if (missing.length > 0) {
+    if (apply && missing.length > 0) {
       const preview = missing.slice(0, 20).join(", ");
       throw new Error(
         `Forward location preflight failed: ${missing.length} location value(s) do not resolve in network ${networkId}: ${preview}`,
@@ -666,12 +986,47 @@ const main = async () => {
     for (const batch of chunk(createChecks, batchSize)) {
       await api("POST", `/snapshots/${snapshotId}/checks?bulk`, { body: batch });
     }
+    if (approvedMutations.updates.length > 0) {
+      for (const item of approvedMutations.updates) {
+        await api("DELETE", `/snapshots/${snapshotId}/checks/${encodeURIComponent(item.existingId)}`);
+      }
+      for (const batch of chunk(approvedMutations.updates.map((item) => item.planned.check), batchSize)) {
+        await api("POST", `/snapshots/${snapshotId}/checks?bulk`, { body: batch });
+      }
+    }
+    for (const item of approvedMutations.deactivations) {
+      await api("DELETE", `/snapshots/${snapshotId}/checks/${encodeURIComponent(item.id)}`);
+    }
   }
 
+  const finishedAt = new Date();
   const report = {
+    runId,
     mode: apply ? "apply" : "dry-run",
+    status: "completed",
     applyPolicy: "create-missing-only",
-    settings: { batchSize, maxRetries },
+    startedAt: startedAt.toISOString(),
+    finishedAt: finishedAt.toISOString(),
+    durationMs: elapsedMs(startedAt),
+    settings: { batchSize, maxDeactivations, maxRetries, maxUpdates, timeoutMs },
+    package: {
+      checksSource: locators.checks,
+      manifestSource: locators.manifest || null,
+      packageId: manifest?.packageId || null,
+      checksSha256: sha256Hex(checksArtifact.text),
+    },
+    mutationPolicy: {
+      applyUpdates,
+      deactivateStale,
+      approvalFile: args["require-approval-file"] || null,
+      changeWindowId: args["change-window-id"] || null,
+      requireSignature: Boolean(args["require-signature"]),
+      approvedBy: approval?.approvedBy || null,
+      approvedChangedKeys: approval?.approvedChangedKeys?.length || 0,
+      approvedStaleKeys: approval?.approvedStaleKeys?.length || 0,
+      appliedUpdates: apply ? approvedMutations.updates.length : 0,
+      appliedDeactivations: apply ? approvedMutations.deactivations.length : 0,
+    },
     networkId,
     snapshotId,
     plannedChecks: plannedChecks.length,
@@ -686,7 +1041,11 @@ const main = async () => {
     hostPreflight: locationPreflight
       ? { checked: locationPreflight.checked.HostFilter, missing: locationPreflight.missing.HostFilter }
       : null,
-    create: reconciliation.create.map(({ check: _check, ...item }) => item),
+    create: reconciliation.create.map((item) => {
+      const summary = { ...item };
+      delete summary.check;
+      return summary;
+    }),
     unchanged: reconciliation.unchanged,
     changed: reconciliation.changed.map(({ planned, existing, ...item }) => ({
       ...item,
@@ -696,9 +1055,12 @@ const main = async () => {
     stale: reconciliation.stale,
   };
 
-  if (args.report) {
-    await writeFile(args.report, `${JSON.stringify(report, null, 2)}\n`);
-  }
+  await writeRunArtifacts({
+    metricsPath: args.metrics,
+    report,
+    reportPath: args.report,
+    statusArtifactPath: args["status-artifact"],
+  });
 
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
 

@@ -1,0 +1,44 @@
+name: live-compatibility
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      KENTIK_EMAIL: ${{ secrets.KENTIK_EMAIL }}
+      KENTIK_TOKEN: ${{ secrets.KENTIK_TOKEN }}
+      FORWARD_BASE_URL: ${{ secrets.FORWARD_VALIDATION_URL }}
+      FORWARD_USER: ${{ secrets.FORWARD_VALIDATION_USERNAME }}
+      FORWARD_PASSWORD: ${{ secrets.FORWARD_VALIDATION_PASSWORD }}
+      FORWARD_NETWORK_ID: ${{ secrets.FORWARD_VALIDATION_NETWORK_ID }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run ci
+      - name: Kentik live query smoke
+        if: env.KENTIK_EMAIL != '' && env.KENTIK_TOKEN != ''
+        run: |
+          npm run kentik:live:smoke -- \
+            --query docs/examples/top-flows-query.json \
+            --out dist/live-topxdata.json
+          npm run kentik:export -- --input dist/live-topxdata.json
+          npm run schemas:validate
+      - name: Forward live dry-run smoke
+        if: env.FORWARD_USER != '' && env.FORWARD_PASSWORD != '' && env.FORWARD_NETWORK_ID != ''
+        run: |
+          npm run forward:import -- \
+            --checks dist/forward-intent-checks.json \
+            --manifest dist/forward-kentik-manifest.json \
+            --report dist/live-forward-dry-run-report.json \
+            --metrics dist/live-forward-dry-run.prom \
+            --status-artifact dist/live-forward-status.json

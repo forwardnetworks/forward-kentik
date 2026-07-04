@@ -8,7 +8,7 @@ import { applyLocationMap, locationMappingStats, validateLocationMap } from "../
 import { normalizeKentikPayload } from "../src/normalize.mjs";
 
 const usage = `
-Forward Kentik export
+Forward Integration for Kentik export
 
 Usage:
   node scripts/kentik-export.mjs
@@ -33,9 +33,8 @@ const main = async () => {
   const out = args.out || "dist";
   const payload = await readJsonFile(input);
   let flows = normalizeKentikPayload(payload);
-  let locationMap = null;
   if (args["location-map"]) {
-    locationMap = await readJsonFile(args["location-map"]);
+    const locationMap = await readJsonFile(args["location-map"]);
     validateLocationMap(locationMap);
     flows = applyLocationMap(flows, locationMap);
   }

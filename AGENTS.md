@@ -14,10 +14,17 @@ checks in `scripts/` or `test/`.
 - [docs/forward-ingest-contract.md](docs/forward-ingest-contract.md): generated package shape.
 - [docs/field-integration-guidelines.md](docs/field-integration-guidelines.md): public branding and support boundary.
 - [docs/operator-runbook.md](docs/operator-runbook.md): field workflow from export to post-apply reconcile.
+- [docs/incident-response.md](docs/incident-response.md): failed/partial import triage.
+- [docs/rbac.md](docs/rbac.md): separation of duties for export, review, and apply.
+- [docs/customer-acceptance-checklist.md](docs/customer-acceptance-checklist.md): pre-apply customer checklist.
+- [docs/approval-workflow.md](docs/approval-workflow.md): optional signed approval path for changed/stale lifecycle automation.
 - [docs/demo-data.md](docs/demo-data.md): offline fixture strategy.
 - [docs/validation-matrix.md](docs/validation-matrix.md): what is verified now.
 - [docs/release-notes.md](docs/release-notes.md): public MVP release notes.
+- [docs/release-provenance.md](docs/release-provenance.md): release archive and checksum verification.
+- [docs/runtime-templates.md](docs/runtime-templates.md): optional systemd/Kubernetes runtime templates.
 - [docs/harness-engineering.md](docs/harness-engineering.md): harness model for this repo.
+- [docs/production-hardening.md](docs/production-hardening.md): production-readiness controls and remaining external work.
 
 ## Non-Negotiables
 

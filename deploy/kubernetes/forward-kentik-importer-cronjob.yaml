@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: forward-kentik-importer
+spec:
+  schedule: "0 * * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: importer
+              image: ghcr.io/forwardnetworks/forward-kentik-importer:replace-with-release
+              imagePullPolicy: IfNotPresent
+              envFrom:
+                - configMapRef:
+                    name: forward-kentik-importer
+                - secretRef:
+                    name: forward-kentik-importer
+              command:
+                - node
+                - scripts/forward-import-package.mjs
+                - --package-url
+                - "$(FORWARD_KENTIK_PACKAGE_URL)"
+                - --report
+                - /var/run/forward-kentik/forward-import-report.json
+                - --metrics
+                - /var/run/forward-kentik/forward-import-metrics.prom
+                - --status-artifact
+                - /var/run/forward-kentik/forward-ingest-status.json
+              volumeMounts:
+                - name: run
+                  mountPath: /var/run/forward-kentik
+          volumes:
+            - name: run
+              emptyDir: {}
