@@ -57,6 +57,7 @@ test("extracts location specifiers for apply preflight", () => {
     HostFilter: ["192.0.2.10"],
     DeviceFilter: ["branch-router"],
     InterfaceFilter: [],
+    SubnetLocationFilter: [],
   });
 });
 
@@ -76,8 +77,28 @@ test("preflights hosts and devices", async () => {
   };
 
   const result = await preflightLocations({ api, networkId: "demo", checks: [check] });
-  assert.deepEqual(result.missing, { HostFilter: [], DeviceFilter: [] });
+  assert.deepEqual(result.missing, { HostFilter: [], DeviceFilter: [], SubnetLocationFilter: [] });
   assert.deepEqual(calls, ["GET /networks/demo/hosts/192.0.2.10", "GET /networks/demo/devices"]);
+});
+
+test("counts subnet location filters without host lookup", async () => {
+  const check = makeCheck("check", "one");
+  check.definition.filters.from.location = { type: "SubnetLocationFilter", value: "10.0.0.0/24" };
+  check.definition.filters.to.location = { type: "SubnetLocationFilter", value: "192.0.2.10" };
+  const calls = [];
+
+  const result = await preflightLocations({
+    api: async (method, apiPath) => {
+      calls.push(`${method} ${apiPath}`);
+      return {};
+    },
+    networkId: "demo",
+    checks: [check],
+  });
+
+  assert.equal(result.checked.SubnetLocationFilter, 2);
+  assert.deepEqual(result.missing.SubnetLocationFilter, []);
+  assert.deepEqual(calls, []);
 });
 
 test("reconciles create unchanged changed and stale", () => {
@@ -164,7 +185,7 @@ test("formats metrics and sanitized status artifacts", () => {
     },
     locationPreflight: {
       checked: { HostFilter: 2, DeviceFilter: 1 },
-      missing: { HostFilter: ["192.0.2.1"], DeviceFilter: [] },
+      missing: { HostFilter: ["192.0.2.1"], DeviceFilter: [], SubnetLocationFilter: [] },
       unchecked: { InterfaceFilter: [] },
     },
   };

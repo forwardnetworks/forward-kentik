@@ -99,16 +99,14 @@ The importer validates package shape, resolves the latest processed snapshot,
 reads existing checks, reconciles by `kentik-key:*`, and creates only missing
 checks when `--apply` is present.
 
-`--apply` also preflights generated Forward locations before posting. Host
-locations are checked against `/api/networks/{networkId}/hosts/{hostSpecifier}`.
-Device locations are checked against `/api/networks/{networkId}/devices`. This
-prevents the common demo failure where observed Kentik IPs are not modeled in
-the target snapshot. In that case, keep the package as a review artifact, adjust
-the source/destination mapping, or run against a network where the endpoints
-exist.
+Raw Kentik packet IPs are emitted as `SubnetLocationFilter`, matching Forward
+path-search behavior for source/destination IPs. `--apply` also preflights
+generated Forward locations before posting. Host locations are checked against
+`/api/networks/{networkId}/hosts/{hostSpecifier}` and device locations are
+checked against `/api/networks/{networkId}/devices`.
 
-Use `--location-map` when raw Kentik endpoints need to be correlated to modeled
-Forward devices or interfaces:
+Use `--location-map` when raw Kentik endpoints should be correlated to reviewed
+Forward hosts, devices, or interfaces:
 
 ```bash
 npm run kentik:export -- \

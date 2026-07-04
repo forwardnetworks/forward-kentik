@@ -20,15 +20,17 @@ create only the missing Kentik-managed checks in Forward.
    npm run kentik:export -- --input fixtures/kentik-topxdata.demo.json
    ```
 
-2. If raw Kentik endpoints do not resolve directly in Forward, generate a map
-   template from the target Forward network:
+2. If raw Kentik endpoints should be reviewed as specific Forward devices or
+   interfaces, generate a map template from the target Forward network:
 
    ```bash
    npm run forward:location-map -- --flows dist/observed-flows.json --out dist/forward-location-map.template.json
    ```
 
 3. Review and edit the location map. The generated map is a starting point, not
-   approval to create checks.
+   approval to create checks. Without a reviewed map, raw Kentik packet IPs
+   remain `SubnetLocationFilter` locations and resolve like Forward path-search
+   source/destination IPs.
 
 4. Rebuild with the reviewed map:
 

@@ -22,8 +22,9 @@ test("builds Forward Existential check JSON", async () => {
   const [flow] = await fixtureFlows();
   const check = toForwardIntentCheck(flow);
   assert.equal(check.definition.checkType, "Existential");
-  assert.equal(check.definition.filters.from.location.type, "HostFilter");
+  assert.equal(check.definition.filters.from.location.type, "SubnetLocationFilter");
   assert.equal(check.definition.filters.from.location.value, "10.20.10.15");
+  assert.equal(check.definition.filters.to.location.type, "SubnetLocationFilter");
   assert.equal(check.definition.filters.to.location.value, "172.16.40.20");
   assert.deepEqual(check.definition.filters.from.headers[0].values.ip_proto, ["6"]);
   assert.deepEqual(check.definition.filters.from.headers[1].values.tp_dst, ["443"]);

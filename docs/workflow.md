@@ -16,8 +16,8 @@ missing checks.
 
 For customer demos, generate a location-map template from the target Forward
 network device inventory, review it, then rebuild the package with
-`--location-map`. This keeps raw telemetry IPs from becoming unchecked Forward
-intent locations.
+`--location-map`. Without a reviewed map, raw telemetry IPs remain
+`SubnetLocationFilter` packet locations, matching Forward path-search behavior.
 
 The importable boundary is endpoint resolution. A Kentik row with source and
 destination IPs is a candidate; it becomes a Forward intent check only when

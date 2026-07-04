@@ -1,6 +1,6 @@
 {
   "name": "forward-kentik",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Forward field integration for turning Kentik flow evidence into Forward intent-check packages",
   "type": "module",
   "repository": {
