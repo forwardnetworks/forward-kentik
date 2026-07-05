@@ -197,6 +197,16 @@ npm run kentik:seed:demo
 npm run kentik:export -- --input dist/kentik-topxdata.seeded-demo.json
 ```
 
+For compatibility checks that should keep running in that trial/demo state, use
+the live-or-seed smoke. It tries the Query API first and falls back only when
+Kentik returns no queryable devices:
+
+```bash
+export KENTIK_PORTAL_PASSWORD=<portal-password>
+npm run kentik:live-or-seed:smoke -- --query docs/examples/top-flows-query.json --out dist/live-topxdata.json
+npm run kentik:export -- --input dist/live-topxdata.json
+```
+
 ## Boundary
 
 Kentik evidence proposes candidate intent. Forward verifies whether the modeled

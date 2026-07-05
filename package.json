@@ -1,6 +1,6 @@
 {
   "name": "forward-kentik",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Forward field integration for turning Kentik flow evidence into Forward intent-check packages",
   "type": "module",
   "repository": {
@@ -14,6 +14,7 @@
   "scripts": {
     "kentik:export": "node scripts/kentik-export.mjs",
     "kentik:live:smoke": "node scripts/kentik-live-smoke.mjs",
+    "kentik:live-or-seed:smoke": "node scripts/kentik-live-or-seed-smoke.mjs",
     "kentik:seed:demo": "node scripts/seed-kentik-demo-data.mjs",
     "forward:import": "node scripts/forward-import-package.mjs",
     "forward:import:smoke": "node scripts/forward-import-smoke.mjs",

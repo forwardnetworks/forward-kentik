@@ -83,6 +83,16 @@ npm run kentik:live:smoke -- --query docs/examples/top-flows-query.json --out fi
 The smoke command writes only the response body. Do not commit live output if it
 contains customer-sensitive traffic.
 
+For demo tenants with portal catalog data but no queryable flow devices, run:
+
+```bash
+export KENTIK_PORTAL_PASSWORD=<portal-password>
+npm run kentik:live-or-seed:smoke -- --query docs/examples/top-flows-query.json --out dist/live-topxdata.json
+```
+
+This command still tries the Query API first. It falls back to a sanitized
+portal-dashboard seed only when Kentik returns no devices.
+
 ## Portal Demo Seed
 
 The trial/demo portal account can expose dashboard templates even when it has no

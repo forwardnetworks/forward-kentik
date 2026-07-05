@@ -13,6 +13,7 @@ jobs:
     env:
       KENTIK_EMAIL: ${{ secrets.KENTIK_EMAIL }}
       KENTIK_TOKEN: ${{ secrets.KENTIK_TOKEN }}
+      KENTIK_PORTAL_PASSWORD: ${{ secrets.KENTIK_PORTAL_PASSWORD }}
       FORWARD_BASE_URL: ${{ secrets.FORWARD_VALIDATION_URL }}
       FORWARD_USER: ${{ secrets.FORWARD_VALIDATION_USERNAME }}
       FORWARD_PASSWORD: ${{ secrets.FORWARD_VALIDATION_PASSWORD }}
@@ -25,10 +26,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run ci
-      - name: Kentik live query smoke
+      - name: Kentik live query or seeded demo smoke
         if: env.KENTIK_EMAIL != '' && env.KENTIK_TOKEN != ''
         run: |
-          npm run kentik:live:smoke -- \
+          npm run kentik:live-or-seed:smoke -- \
             --query docs/examples/top-flows-query.json \
             --out dist/live-topxdata.json
           npm run kentik:export -- --input dist/live-topxdata.json

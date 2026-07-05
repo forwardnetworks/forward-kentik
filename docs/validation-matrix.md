@@ -23,6 +23,7 @@
 | Release signing helpers | Automated | `npm test`, `npm run release:sign` |
 | Demo screenshots from generated artifacts | Automated | `npm run screenshots:render` |
 | Live Kentik auth and query | Manual | `npm run kentik:live:smoke` |
+| Live-or-seeded Kentik compatibility | Manual/GitHub Actions | `npm run kentik:live-or-seed:smoke`, `live-compatibility` |
 | Portal dashboard seed | Manual | `npm run kentik:seed:demo` |
 | Forward API import | Automated against fake API; manual against tenant | `npm run forward:import:smoke`, `npm run forward:import` |
 | Optional NQE Data Connector config | Automated | `npm test`, `npm run forward:data-connector` |
