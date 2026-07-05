@@ -1,5 +1,22 @@
 # Release Notes
 
+## v0.1.3
+
+Live compatibility fallback patch.
+
+### Added
+
+- `kentik:live-or-seed:smoke` tries the Kentik Query API first, then falls back
+  to sanitized portal-seeded demo data only when the Kentik account has no
+  queryable devices.
+- The GitHub live compatibility workflow now uses that command and accepts
+  `KENTIK_PORTAL_PASSWORD` for the fallback path.
+
+### Fixed
+
+- Portal auth can now be supplied entirely from environment variables in CI
+  without requiring a local `~/kentik.token` file.
+
 ## v0.1.2
 
 Forward location semantics patch.

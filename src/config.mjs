@@ -131,15 +131,12 @@ export const requireKentikAuth = (config) => {
 };
 
 export const kentikPortalConfigFromEnv = async () => {
-  const fileAuth = await readKentikAuthFile();
+  const envPassword = process.env.KENTIK_PORTAL_PASSWORD || process.env.KENTIK_PASSWORD;
+  const fileAuth = process.env.KENTIK_EMAIL && envPassword ? {} : await readKentikAuthFile();
   return {
     portalUrl: process.env.KENTIK_PORTAL_URL || fileAuth.portalUrl || DEFAULT_PORTAL_URL,
     email: process.env.KENTIK_EMAIL || fileAuth.email || "",
-    password:
-      process.env.KENTIK_PORTAL_PASSWORD ||
-      process.env.KENTIK_PASSWORD ||
-      fileAuth.portalPassword ||
-      "",
+    password: envPassword || fileAuth.portalPassword || "",
   };
 };
 
