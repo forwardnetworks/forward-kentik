@@ -13,6 +13,7 @@ export const parseArgs = (argv) => {
   const args = { _: [] };
   const booleanFlags = new Set([
     "apply",
+    "check",
     "collect",
     "help",
     "include-low-confidence",

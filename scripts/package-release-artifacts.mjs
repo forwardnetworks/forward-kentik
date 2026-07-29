@@ -21,16 +21,21 @@ Options:
 `;
 
 const RELEASE_PATHS = [
+  ".node-version",
+  ".nvmrc",
   ".github/CODEOWNERS",
   ".github/dependabot.yml",
   ".github/workflows/ci.yml",
   ".github/workflows/live-compatibility.yml",
   ".github/workflows/release.yml",
+  ".github/workflows/verify-release.yml",
   "AGENTS.md",
+  "ARCHITECTURE.md",
   "CONTRIBUTING.md",
   "LICENSE",
   "README.md",
   "SECURITY.md",
+  "SUPPORT.md",
   "deploy",
   "docs",
   "eslint.config.mjs",
@@ -79,6 +84,12 @@ export const packageReleaseArtifacts = async ({ outDir = "dist/release", writeCh
   const archivePath = path.join(resolvedOutDir, releaseArchiveName(metadata));
   await run("tar", ["-czf", archivePath, "--exclude", "docs/assets/screenshots/*.tmp", ...RELEASE_PATHS]);
 
+  const sbomPath = path.join(resolvedOutDir, "forward-kentik-sbom.cdx.json");
+  const { stdout: sbomText } = await run("npm", ["sbom", "--sbom-format=cyclonedx"]);
+  const sbom = JSON.parse(sbomText);
+  sbom.metadata.component.name = metadata.name;
+  await writeFile(sbomPath, `${JSON.stringify(sbom, null, 2)}\n`, "utf8");
+
   const manifest = {
     schemaVersion: "forward-kentik-release/v0.1",
     generatedAt: new Date().toISOString(),
@@ -86,6 +97,9 @@ export const packageReleaseArtifacts = async ({ outDir = "dist/release", writeCh
       name: metadata.name,
       version: metadata.version,
       archive: path.basename(archivePath),
+    },
+    artifacts: {
+      sbom: path.basename(sbomPath),
     },
     contents: RELEASE_PATHS,
   };
@@ -95,7 +109,7 @@ export const packageReleaseArtifacts = async ({ outDir = "dist/release", writeCh
   let checksums = null;
   if (writeChecksums) {
     checksums = await writeChecksumManifest({
-      files: [archivePath, releaseManifestPath],
+      files: [archivePath, releaseManifestPath, sbomPath],
       outPath: path.join(resolvedOutDir, "SHA256SUMS"),
     });
   }
@@ -104,6 +118,7 @@ export const packageReleaseArtifacts = async ({ outDir = "dist/release", writeCh
     archive: archivePath,
     checksums: checksums?.outPath || null,
     manifest: releaseManifestPath,
+    sbom: sbomPath,
   };
 };
 

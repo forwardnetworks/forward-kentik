@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { formatChecksumLines, sha256File, writeChecksumManifest } from "../scripts/release-checksums.mjs";
-import { releaseArchiveName } from "../scripts/package-release-artifacts.mjs";
+import {
+  packageReleaseArtifacts,
+  releaseArchiveName,
+} from "../scripts/package-release-artifacts.mjs";
 import { generateReleaseSigningKeyPair } from "../scripts/generate-release-signing-keypair.mjs";
 import { packageSignatureMaterial } from "../scripts/sign-forward-package.mjs";
 import { signText, verifyTextSignature } from "../scripts/sign-release-checksums.mjs";
@@ -33,6 +36,21 @@ test("writes release checksums for artifact files", async () => {
 
 test("builds release archive names from package metadata", () => {
   assert.equal(releaseArchiveName({ name: "forward-kentik", version: "0.1.0" }), "forward-kentik-0.1.0.tgz");
+});
+
+test("packages a checksummed CycloneDX SBOM with the source archive", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "forward-kentik-package-test-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+
+  const result = await packageReleaseArtifacts({ outDir: directory });
+  const sbom = JSON.parse(await readFile(result.sbom, "utf8"));
+  const checksums = await readFile(result.checksums, "utf8");
+  const manifest = JSON.parse(await readFile(result.manifest, "utf8"));
+
+  assert.equal(sbom.bomFormat, "CycloneDX");
+  assert.equal(sbom.metadata.component.name, "forward-kentik");
+  assert.match(checksums, /forward-kentik-sbom\.cdx\.json/u);
+  assert.equal(manifest.artifacts.sbom, "forward-kentik-sbom.cdx.json");
 });
 
 test("signs and verifies release checksum text", () => {

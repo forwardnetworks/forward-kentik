@@ -1,0 +1,69 @@
+name: verify-release
+
+on:
+  workflow_run:
+    workflows: [release]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      release_name:
+        description: Exact published tag to verify
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  attestations: read
+  contents: read
+
+jobs:
+  verify:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && startsWith(github.event.workflow_run.head_branch, 'v'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_NAME: ${{ github.event_name == 'workflow_dispatch' && inputs.release_name || github.event.workflow_run.head_branch }}
+    steps:
+      - name: Checkout immutable release source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_name || github.event.workflow_run.head_sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+
+      - name: Validate release ref
+        run: npm run release:ref:validate -- --release-name "${RELEASE_NAME}"
+
+      - name: Verify published release evidence
+        run: |
+          set -euo pipefail
+          verification_dir="out/published-release-verification"
+          mkdir -p "${verification_dir}"
+          gh release download "${RELEASE_NAME}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --dir "${verification_dir}"
+          archive="${verification_dir}/forward-kentik-${RELEASE_NAME#v}.tgz"
+          test -f "${archive}"
+          test -f "${verification_dir}/forward-kentik-sbom.cdx.json"
+          {
+            echo "release=${RELEASE_NAME}"
+            echo "repository=${GITHUB_REPOSITORY}"
+            (
+              cd "${verification_dir}"
+              sha256sum -c SHA256SUMS
+            )
+            gh attestation verify "${archive}" --repo "${GITHUB_REPOSITORY}"
+          } | tee "${verification_dir}/verification.txt"
+
+      - name: Upload verification report
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: forward-kentik-published-release-verification-${{ env.RELEASE_NAME }}
+          path: out/published-release-verification/verification.txt
+          if-no-files-found: error

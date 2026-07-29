@@ -1,6 +1,9 @@
 # Forward Integration for Kentik
 
-[![ci](https://github.com/forwardnetworks/forward-kentik/actions/workflows/ci.yml/badge.svg)](https://github.com/forwardnetworks/forward-kentik/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/forwardnetworks/forward-kentik/ci.yml?branch=main&label=ci)](https://github.com/forwardnetworks/forward-kentik/blob/main/.github/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/forwardnetworks/forward-kentik?include_prereleases&sort=semver)](https://github.com/forwardnetworks/forward-kentik/releases)
+[![Node.js 24](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](.node-version)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Forward Integration for Kentik is a Forward field integration for turning
 Kentik flow evidence into Forward intent-check import packages.
@@ -8,6 +11,11 @@ Kentik flow evidence into Forward intent-check import packages.
 This repository is a field integration, not an officially supported Forward
 product integration. It is intended for repeatable customer demos, presales
 validation, and integration prototyping.
+
+> **Release channel:** `v0.1.3` field preview for controlled evaluation and
+> non-production use. The current release includes checksums, detached
+> signatures, and a GitHub archive attestation. Releases built from current
+> `main` also publish a checksummed CycloneDX SBOM and attest every artifact.
 
 The presales problem: Forward intent checks demo well, but building the first
 set of checks is hard. Kentik already has observed source, destination,
@@ -24,6 +32,24 @@ reviewable candidate Forward checks.
 
 Scheduling is intentionally out of scope for the MVP. The first production-grade
 workflow is explicit review, export, dry-run, then push.
+
+## Quick Start
+
+Prerequisites are Node.js 24 and npm. This fixture-backed path is synthetic,
+requires no credentials, and makes no Forward changes:
+
+```bash
+git clone https://github.com/forwardnetworks/forward-kentik.git
+cd forward-kentik
+npm ci
+
+npm run kentik:export -- --input fixtures/kentik-topxdata.demo.json
+npm run forward:import -- --validate-only \
+  --checks dist/forward-intent-checks.json \
+  --manifest dist/forward-kentik-manifest.json
+npm run dashboard:build
+npm run dashboard:serve
+```
 
 ## Shape
 
@@ -70,6 +96,10 @@ Package readiness:
 Forward import dry run:
 
 ![Forward import dry run](docs/assets/screenshots/03-forward-import-dry-run.png)
+
+Optional NQE visibility:
+
+![Optional NQE visibility](docs/assets/screenshots/04-optional-nqe-visibility.png)
 
 Exposure-style dashboard:
 
@@ -142,6 +172,30 @@ Forward Data Connector config generation is optional and only useful when you
 want `observed-flows.json` visible to NQE. Data Connectors do not create intent
 checks, so they are not the main workflow.
 
+## Install a Verified Release
+
+Use an operator-owned directory, verify every checksum, and verify the archive
+attestation before installing dependencies:
+
+```bash
+export RELEASE_TAG=v0.1.3
+mkdir -p "forward-kentik-${RELEASE_TAG}"
+cd "forward-kentik-${RELEASE_TAG}"
+
+gh release download "${RELEASE_TAG}" \
+  --repo forwardnetworks/forward-kentik
+sha256sum -c SHA256SUMS
+gh attestation verify "forward-kentik-${RELEASE_TAG#v}.tgz" \
+  --repo forwardnetworks/forward-kentik
+
+tar -xzf "forward-kentik-${RELEASE_TAG#v}.tgz"
+npm ci
+npm run ci
+```
+
+See [release provenance](docs/release-provenance.md) for detached-signature
+verification and macOS checksum commands.
+
 ## Commands
 
 ```bash
@@ -152,6 +206,7 @@ npm run dashboard:serve
 npm run kentik:seed:demo
 npm run forward:import -- --validate-only --checks dist/forward-intent-checks.json --manifest dist/forward-kentik-manifest.json
 npm run screenshots:render
+npm run screenshots:check
 npm run schemas:validate
 npm test
 npm run workflow:smoke
@@ -159,6 +214,12 @@ npm run scale:smoke
 npm run repo:validate
 npm run ci
 ```
+
+## Documentation
+
+Start with the [documentation index](docs/index.md). It routes operators and
+reviewers to architecture, workflow, installation, RBAC, approval, incident,
+release, runtime, and production-readiness guidance.
 
 ## Quality Bar
 
@@ -168,7 +229,7 @@ credentials, or live flow exports. The default gates are:
 - `npm run repo:validate`
 - `npm run kentik:export`
 - `npm run schemas:validate`
-- `npm run screenshots:render`
+- `npm run screenshots:check`
 - `npm test`
 - `npm run workflow:smoke`
 - `npm run forward:import:smoke`
@@ -189,8 +250,8 @@ npm run kentik:live:smoke -- --query docs/examples/top-flows-query.json --out fi
 npm run kentik:export -- --input fixtures/live-topxdata.json
 ```
 
-The current trial/demo tenant exposes portal dashboard templates, but no
-configured devices or sites. Seed demo data from the portal catalog with:
+A trial/demo tenant with portal dashboard templates but no queryable devices can
+seed synthetic demo data from the portal catalog with:
 
 ```bash
 npm run kentik:seed:demo
@@ -222,3 +283,6 @@ traffic.
 
 This is a Forward field integration, not an officially supported Forward
 product integration.
+
+See [SUPPORT.md](SUPPORT.md) for the field-preview support boundary and
+[SECURITY.md](SECURITY.md) for private reporting and data-handling requirements.

@@ -19,9 +19,11 @@
 | Forward host preflight before apply | Automated against fake API; manual against tenant | `npm run forward:import:smoke`, `npm run forward:import -- --apply` |
 | End-to-end fixture export | Automated | `npm run workflow:smoke` |
 | Scale/idempotence importer smoke | Automated | `npm run scale:smoke` |
-| Release archive/checksum smoke | Automated | `npm run release:package:smoke` |
+| Release archive/checksum/SBOM smoke | Automated | `npm run release:package:smoke` |
 | Release signing helpers | Automated | `npm test`, `npm run release:sign` |
-| Demo screenshots from generated artifacts | Automated | `npm run screenshots:render` |
+| Release tag/version consistency | Automated | `npm run release:ref:validate`, `npm test` |
+| Published release checksums and attestation | GitHub Actions after release | `verify-release` |
+| Demo screenshot pixels match generated artifacts | Automated | `npm run screenshots:check` |
 | Live Kentik auth and query | Manual | `npm run kentik:live:smoke` |
 | Live-or-seeded Kentik compatibility | Manual/GitHub Actions | `npm run kentik:live-or-seed:smoke`, `live-compatibility` |
 | Portal dashboard seed | Manual | `npm run kentik:seed:demo` |

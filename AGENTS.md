@@ -9,6 +9,9 @@ checks in `scripts/` or `test/`.
 ## Start Here
 
 - [README.md](README.md): project shape, commands, and current status.
+- [docs/index.md](docs/index.md): user-facing documentation map.
+- [ARCHITECTURE.md](ARCHITECTURE.md): trust boundary and component flow.
+- [SUPPORT.md](SUPPORT.md): field-preview support boundary.
 - [docs/workflow.md](docs/workflow.md): presales demo flow and integration boundary.
 - [docs/kentik-api.md](docs/kentik-api.md): Kentik auth, query path, and live-smoke notes.
 - [docs/forward-ingest-contract.md](docs/forward-ingest-contract.md): generated package shape.

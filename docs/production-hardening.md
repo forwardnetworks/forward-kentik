@@ -18,10 +18,12 @@ customer use.
 - Incident response, RBAC, and customer acceptance checklist docs.
 - CI gates for repo hygiene, JSON schemas, unit tests, workflow smoke, importer
   smoke, scale/idempotence smoke, dependency audit, SBOM generation, and lint.
-- Release archive and `SHA256SUMS` generation for verifiable handoff.
+- Release archive, CycloneDX SBOM, and `SHA256SUMS` generation for verifiable
+  handoff.
 - Optional detached Ed25519 signatures for release checksums and intent
   packages.
-- GitHub release workflow with archive provenance attestation.
+- GitHub release workflow with all-artifact attestations and post-publication
+  verification.
 - Read-only acceptance bundle generation.
 - Optional systemd and Kubernetes runtime templates.
 - Approval-gated changed/stale lifecycle automation with exact key approvals,
@@ -44,4 +46,5 @@ customer use.
 - Published container image and image provenance if scheduled import is approved
   and an image is the selected runtime.
 - Centralized metrics/log shipping from importer reports.
-- Approval-gated changed/stale lifecycle automation, if a deployment needs it.
+- A supported compatibility and upgrade program if this field integration is
+  promoted to a production product.

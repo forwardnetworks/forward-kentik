@@ -8,13 +8,18 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const failures = [];
 
 const requiredFiles = [
+  ".node-version",
+  ".nvmrc",
   "AGENTS.md",
+  "ARCHITECTURE.md",
   "README.md",
+  "SUPPORT.md",
   "CONTRIBUTING.md",
   "LICENSE",
   "SECURITY.md",
   "eslint.config.mjs",
   "docs/harness-engineering.md",
+  "docs/index.md",
   "docs/workflow.md",
   "docs/field-integration-guidelines.md",
   "docs/operator-runbook.md",
@@ -69,6 +74,8 @@ const requiredFiles = [
   "scripts/release-checksums.mjs",
   "scripts/sign-release-checksums.mjs",
   "scripts/generate-release-signing-keypair.mjs",
+  "scripts/validate-github-action-pins.mjs",
+  "scripts/validate-release-ref.mjs",
   "scripts/schema-validate.mjs",
   "scripts/serve-package.mjs",
   "scripts/scale-smoke.mjs",
@@ -86,9 +93,12 @@ const requiredFiles = [
   "test/acceptance-bundle.test.mjs",
   "test/forward-location-template.test.mjs",
   "test/release-artifacts.test.mjs",
+  "test/github-action-pins.test.mjs",
+  "test/release-ref.test.mjs",
   ".github/workflows/ci.yml",
   ".github/workflows/release.yml",
   ".github/workflows/live-compatibility.yml",
+  ".github/workflows/verify-release.yml",
   ".github/CODEOWNERS",
   ".github/dependabot.yml",
   ".github/pull_request_template.md",
@@ -121,6 +131,24 @@ const exists = async (relativePath) => {
 };
 
 const readText = async (relativePath) => readFile(path.join(root, relativePath), "utf8");
+
+const markdownImageTargets = (source) => {
+  const targets = [];
+  let offset = 0;
+  while (offset < source.length) {
+    const imageStart = source.indexOf("![", offset);
+    if (imageStart === -1) break;
+    const targetStart = source.indexOf("](", imageStart + 2);
+    if (targetStart === -1) break;
+    const targetEnd = source.indexOf(")", targetStart + 2);
+    if (targetEnd === -1) break;
+    const value = source.slice(targetStart + 2, targetEnd).trim();
+    const spaceIndex = value.indexOf(" ");
+    targets.push(spaceIndex === -1 ? value : value.slice(0, spaceIndex));
+    offset = targetEnd + 1;
+  }
+  return targets;
+};
 
 const walkTextFiles = async (directory = root) => {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -158,6 +186,34 @@ for (const screenshot of requiredScreenshots) {
   }
 }
 
+if (await exists("README.md")) {
+  const readme = await readText("README.md");
+  for (const screenshot of requiredScreenshots) {
+    if (!readme.includes(`(${screenshot})`)) {
+      fail(`README.md does not reference required screenshot: ${screenshot}`);
+    }
+  }
+
+  for (const target of markdownImageTargets(readme)) {
+    if (
+      target.startsWith("http:") ||
+      target.startsWith("https:") ||
+      target.startsWith("data:") ||
+      target.startsWith("#")
+    ) {
+      continue;
+    }
+    const queryIndex = target.indexOf("?");
+    const fragmentIndex = target.indexOf("#");
+    const suffixIndexes = [queryIndex, fragmentIndex].filter((index) => index >= 0);
+    const suffixIndex = suffixIndexes.length > 0 ? Math.min(...suffixIndexes) : target.length;
+    const localTarget = decodeURIComponent(target.slice(0, suffixIndex));
+    if (!(await exists(localTarget))) {
+      fail(`README.md image target does not exist: ${target}`);
+    }
+  }
+}
+
 if (await exists("AGENTS.md")) {
   const agentMap = await readText("AGENTS.md");
   const lineCount = agentMap.trimEnd().split("\n").length;
@@ -166,6 +222,7 @@ if (await exists("AGENTS.md")) {
   }
   for (const target of [
     "docs/workflow.md",
+    "docs/index.md",
     "docs/kentik-api.md",
     "docs/forward-ingest-contract.md",
     "docs/field-integration-guidelines.md",

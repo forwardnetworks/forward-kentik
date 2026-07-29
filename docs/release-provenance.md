@@ -15,6 +15,7 @@ Default output:
 
 - `dist/release/forward-kentik-<version>.tgz`
 - `dist/release/forward-kentik-release-manifest.json`
+- `dist/release/forward-kentik-sbom.cdx.json`
 - `dist/release/SHA256SUMS`
 
 Verify the archive before use:
@@ -66,12 +67,15 @@ The GitHub release workflow signs checksums when
 2. Build the release package from that revision.
 3. Verify `SHA256SUMS`.
 4. Inspect `forward-kentik-release-manifest.json`.
-5. Run `npm ci` from the unpacked archive.
-6. Run `npm run ci`.
-7. Run Forward dry-run before any `--apply`.
+5. Inspect `forward-kentik-sbom.cdx.json`.
+6. Verify the archive attestation with `gh attestation verify`.
+7. Run `npm ci` from the unpacked archive.
+8. Run `npm run ci`.
+9. Run Forward dry-run before any `--apply`.
 
 ## Current Boundary
 
-This repository generates checksum-based provenance, optional detached checksum
-signatures, and GitHub archive attestations. Container image provenance remains
-future work unless a deployment requires an operated image.
+This repository generates checksum-based provenance, a CycloneDX SBOM, optional
+detached checksum signatures, and GitHub attestations for every published
+release artifact. Container image provenance remains future work unless a
+deployment requires an operated image.

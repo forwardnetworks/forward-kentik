@@ -1,5 +1,24 @@
 # Release Notes
 
+## Unreleased
+
+### Added
+
+- Public quick start, documentation index, architecture, and support policy.
+- README validation for every required screenshot and local image target.
+- Pixel-level screenshot verification that ignores PNG compression differences.
+- Immutable GitHub Action pins with a regression validator.
+- Release tag/version validation and post-publication checksum/attestation
+  verification.
+- CycloneDX SBOM as a checksummed and attested release artifact.
+
+### Changed
+
+- Node.js support is pinned to the Node 24 release line for reproducible demo
+  screenshot generation.
+- Dependency auditing now includes the development toolchain used to build and
+  validate release archives.
+
 ## v0.1.3
 
 Live compatibility fallback patch.

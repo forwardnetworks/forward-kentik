@@ -9,10 +9,13 @@ const usage = `
 Render demo screenshots
 
 Usage:
-  node scripts/render-demo-screenshots.mjs --out docs/assets/screenshots
+  node scripts/render-demo-screenshots.mjs --out docs/assets/screenshots [--check]
 
 Creates static PNG assets from generated package artifacts. These are demo
 evidence boards for public docs, not captured Forward product screenshots.
+
+Options:
+  --check  Compare decoded pixels with existing files instead of rewriting PNGs.
 `;
 
 const WIDTH = 1440;
@@ -84,10 +87,18 @@ const main = async () => {
   ];
 
   for (const screenshot of screenshots) {
-    await writePng(path.join(out, screenshot.file), renderBoard(screenshot));
+    const filePath = path.join(out, screenshot.file);
+    const canvas = renderBoard(screenshot);
+    if (args.check) {
+      await verifyPngPixels(filePath, canvas);
+    } else {
+      await writePng(filePath, canvas);
+    }
   }
 
-  process.stdout.write(`${JSON.stringify({ out, count: screenshots.length }, null, 2)}\n`);
+  process.stdout.write(
+    `${JSON.stringify({ out, count: screenshots.length, mode: args.check ? "check" : "render" }, null, 2)}\n`,
+  );
 };
 
 const readJson = async (filePath) => JSON.parse(await readFile(filePath, "utf8"));
@@ -336,6 +347,65 @@ const writePng = async (filePath, canvas) => {
   ]);
   await mkdir(path.dirname(filePath), { recursive: true });
   await import("node:fs/promises").then(({ writeFile }) => writeFile(filePath, png));
+};
+
+const verifyPngPixels = async (filePath, canvas) => {
+  const png = await readFile(filePath);
+  const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  if (!png.subarray(0, signature.length).equals(signature)) {
+    throw new Error(`${filePath} is not a PNG file.`);
+  }
+
+  let offset = signature.length;
+  let width = null;
+  let height = null;
+  const imageData = [];
+  while (offset + 12 <= png.length) {
+    const length = png.readUInt32BE(offset);
+    const type = png.toString("ascii", offset + 4, offset + 8);
+    const dataStart = offset + 8;
+    const dataEnd = dataStart + length;
+    if (dataEnd + 4 > png.length) {
+      throw new Error(`${filePath} contains a truncated PNG chunk.`);
+    }
+    if (type === "IHDR") {
+      width = png.readUInt32BE(dataStart);
+      height = png.readUInt32BE(dataStart + 4);
+      if (png[dataStart + 8] !== 8 || png[dataStart + 9] !== 6) {
+        throw new Error(`${filePath} must use 8-bit RGBA pixels.`);
+      }
+    } else if (type === "IDAT") {
+      imageData.push(png.subarray(dataStart, dataEnd));
+    } else if (type === "IEND") {
+      break;
+    }
+    offset = dataEnd + 4;
+  }
+
+  if (width !== canvas.width || height !== canvas.height || imageData.length === 0) {
+    throw new Error(`${filePath} has unexpected PNG dimensions or no image data.`);
+  }
+
+  const { inflateSync } = await import("node:zlib");
+  const scanlines = inflateSync(Buffer.concat(imageData));
+  const rowSize = width * 4;
+  const expectedSize = (rowSize + 1) * height;
+  if (scanlines.length !== expectedSize) {
+    throw new Error(`${filePath} has an unexpected decoded size.`);
+  }
+
+  const pixels = Buffer.alloc(rowSize * height);
+  for (let y = 0; y < height; y += 1) {
+    const scanlineStart = y * (rowSize + 1);
+    if (scanlines[scanlineStart] !== 0) {
+      throw new Error(`${filePath} uses an unsupported PNG row filter.`);
+    }
+    scanlines.copy(pixels, y * rowSize, scanlineStart + 1, scanlineStart + 1 + rowSize);
+  }
+
+  if (!pixels.equals(canvas.data)) {
+    throw new Error(`${filePath} pixels do not match generated repository artifacts.`);
+  }
 };
 
 main().catch((error) => {

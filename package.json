@@ -25,7 +25,9 @@
     "dashboard:serve": "node scripts/serve-dashboard.mjs",
     "package:serve": "node scripts/serve-package.mjs",
     "screenshots:render": "node scripts/render-demo-screenshots.mjs",
+    "screenshots:check": "node scripts/render-demo-screenshots.mjs --check",
     "repo:validate": "node scripts/validate-repo.mjs",
+    "github-actions:validate": "node scripts/validate-github-action-pins.mjs",
     "schemas:validate": "node scripts/schema-validate.mjs",
     "workflow:smoke": "node scripts/workflow-smoke.mjs",
     "scale:smoke": "node scripts/scale-smoke.mjs",
@@ -35,15 +37,16 @@
     "release:package:smoke": "node scripts/package-release-artifacts.mjs",
     "release:sign": "node scripts/sign-release-checksums.mjs",
     "release:signing-key:generate": "node scripts/generate-release-signing-keypair.mjs",
-    "security:audit": "npm audit --omit=dev --audit-level=high",
-    "sbom:check": "npm sbom --omit=dev --sbom-format=cyclonedx > /tmp/forward-kentik-sbom.cdx.json",
+    "release:ref:validate": "node scripts/validate-release-ref.mjs",
+    "security:audit": "npm audit --audit-level=high",
+    "sbom:check": "npm sbom --sbom-format=cyclonedx > /tmp/forward-kentik-sbom.cdx.json",
     "whitespace:check": "git diff --check",
     "lint": "eslint .",
     "test": "node --test test/*.test.mjs",
-    "ci": "npm run repo:validate && npm run whitespace:check && npm run kentik:export && npm run schemas:validate && npm run dashboard:build && npm run screenshots:render && npm test && npm run workflow:smoke && npm run forward:import:smoke && npm run scale:smoke && npm run acceptance:bundle && npm run release:package:smoke && npm run security:audit && npm run sbom:check && npm run lint"
+    "ci": "npm run repo:validate && npm run github-actions:validate && npm run whitespace:check && npm run kentik:export && npm run schemas:validate && npm run dashboard:build && npm run screenshots:check && npm test && npm run workflow:smoke && npm run forward:import:smoke && npm run scale:smoke && npm run acceptance:bundle && npm run release:package:smoke && npm run security:audit && npm run sbom:check && npm run lint"
   },
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=24.0.0 <25.0.0"
   },
   "author": "Forward Networks",
   "license": "MIT",
